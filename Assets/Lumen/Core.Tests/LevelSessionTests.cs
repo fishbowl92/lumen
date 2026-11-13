@@ -160,16 +160,16 @@ namespace Lumen.Core.Tests
             Assert.IsTrue(session.IsCleared);
             Assert.AreEqual(2, session.PlacedCount);
             Assert.AreEqual(1, session.EffectivePlacedCount);
-            Assert.AreEqual(3, session.Stars);
+            Assert.AreEqual(2, session.Stars, "별은 조작 수로 센다: 2번 조작, Par 1 → 별 2개");
         }
 
-        // 별 규칙(11/13 변경): 조작 수 ≤ Par+2 → 3, ≤ Par×2+2 → 2, 그 밖 → 1
+        // 별 규칙(11/13 변경): 조작 수 ≤ Par → 3, ≤ Par×2+2 → 2, 그 밖 → 1
         [TestCase(1, 1, 3)]
-        [TestCase(3, 1, 3)]
+        [TestCase(2, 1, 2)]
         [TestCase(4, 1, 2)]
         [TestCase(5, 1, 1)]
-        [TestCase(6, 4, 3)]
-        [TestCase(7, 4, 2)]
+        [TestCase(4, 4, 3)]
+        [TestCase(5, 4, 2)]
         [TestCase(10, 4, 2)]
         [TestCase(11, 4, 1)]
         public void T19_StarRule(int moves, int par, int expectedStars)

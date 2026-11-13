@@ -64,12 +64,13 @@ namespace Lumen.Core
         public bool IsPlayerPiece(Int3 position) => _placed.Contains(position);
 
         /// <summary>
-        /// 별 규칙(11/13 변경): 조작 수가 Par+2 이하면 3개, Par×2+2 이하면 2개, 그보다 많으면 1개.
+        /// 별 규칙(11/13 변경): 조작 수가 Par 이하면 3개, Par×2+2 이하면 2개, 그보다 많으면 1개.
         /// 해가 1개뿐인 레벨이 많아 "빛을 꺾은 거울 수"로는 별이 항상 3개가 되어 조작 수로 바꿨다.
+        /// 별 3개는 최소 조작으로 풀었을 때만 준다(Par+2까지 주던 것을 플레이 확인 뒤 좁힘).
         /// </summary>
         public static int ScoreStars(int moves, int par)
         {
-            if (moves <= par + 2)
+            if (moves <= par)
             {
                 return 3;
             }
