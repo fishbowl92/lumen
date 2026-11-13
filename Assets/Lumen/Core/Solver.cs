@@ -30,6 +30,10 @@ namespace Lumen.Core
             Placements = placements;
             FloorChanges = floorChanges;
             Key = string.Join(" | ", placements);
+            foreach (var placement in placements)
+            {
+                Actions += 1 + PieceRules.RotationsTo(placement.Type, placement.State);
+            }
         }
 
         public IReadOnlyList<Placement> Placements { get; }
@@ -39,6 +43,9 @@ namespace Lumen.Core
 
         /// <summary>이 해에서 광선이 위·아래로 움직인 직선 구간 수. 3D 체감 지표.</summary>
         public int FloorChanges { get; }
+
+        /// <summary>빈 판에서 이 해를 만드는 최소 조작 수: 거울마다 배치 1회 + 목표 상태까지의 회전 수.</summary>
+        public int Actions { get; }
 
         public string Key { get; }
 
@@ -65,8 +72,14 @@ namespace Lumen.Core
             AnyTruncated = anyTruncated;
 
             MinPlacements = solutions.Count > 0 ? solutions[0].Count : -1;
+            MinActions = -1;
             foreach (var solution in solutions)
             {
+                if (MinActions < 0 || solution.Actions < MinActions)
+                {
+                    MinActions = solution.Actions;
+                }
+
                 if (solution.Count == MinPlacements)
                 {
                     MinSolutionCount++;
@@ -82,6 +95,9 @@ namespace Lumen.Core
 
         /// <summary>최소 배치 수. 풀 수 없으면 -1. 레벨 JSON의 solverMinPlacements와 같아야 한다.</summary>
         public int MinPlacements { get; }
+
+        /// <summary>모든 해 가운데 가장 적은 조작 수(Par). 레벨 JSON의 solverMinActions와 같아야 한다. 풀 수 없으면 -1.</summary>
+        public int MinActions { get; }
 
         /// <summary>해의 개수(11/13 결정: 유효 배치로만 이뤄진 서로 다른 배치의 수).</summary>
         public int SolutionCount => Solutions.Count;
@@ -217,7 +233,7 @@ namespace Lumen.Core
             var text = new StringBuilder();
             text.Append($"{definition.Id}: ");
             text.Append(result.Solvable
-                ? $"min {result.MinPlacements} (json {definition.SolverMinPlacements}), solutions {result.SolutionCount}"
+                ? $"min {result.MinPlacements} (json {definition.SolverMinPlacements}), par {result.MinActions} (json {definition.SolverMinActions}), solutions {result.SolutionCount}"
                 : "UNSOLVABLE");
             text.Append($", floor changes {result.FloorChanges}, near misses {result.NearMisses}");
             text.Append($", search space {result.SearchSpace}, nodes {result.Nodes}");

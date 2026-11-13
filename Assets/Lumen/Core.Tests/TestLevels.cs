@@ -16,7 +16,8 @@ namespace Lumen.Core.Tests
             fixedPieces = new[] { new PieceData { x = 2, y = 1, z = 1, type = "Lift", state = "XFall" } },
             pedestals = new[] { new CellData { x = 2, y = 0, z = 1 }, new CellData { x = 1, y = 0, z = 2 } },
             inventory = new InventoryData { plane = 1, lift = 1, splitter = 0 },
-            solverMinPlacements = 1
+            solverMinPlacements = 1,
+            solverMinActions = 1
         };
 
         public static LevelData Level01Data() => new LevelData
@@ -32,7 +33,8 @@ namespace Lumen.Core.Tests
             fixedPieces = new PieceData[0],
             pedestals = new[] { new CellData { x = 1, y = 0, z = 1 }, new CellData { x = 2, y = 0, z = 1 } },
             inventory = new InventoryData { plane = 1, lift = 0, splitter = 0 },
-            solverMinPlacements = 1
+            solverMinPlacements = 1,
+            solverMinActions = 1
         };
 
         public static LevelSession Level05() => new LevelSession(LevelDefinition.FromData(Level05Data()));

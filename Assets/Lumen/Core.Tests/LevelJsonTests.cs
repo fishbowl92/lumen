@@ -31,7 +31,7 @@ namespace Lumen.Core.Tests
         }
 
         /// <summary>
-        /// 모든 레벨이 풀리고, JSON의 최소 배치 수가 솔버 결과와 같은지 확인한다.
+        /// 모든 레벨이 풀리고, JSON의 최소 배치 수·최소 조작 수(Par)가 솔버 결과와 같은지 확인한다.
         /// 8레벨부터는 해가 3개 이하여야 한다(기획서 엣지 케이스 표: 답이 너무 많으면 우연히 풀린다).
         /// 레벨을 추가·수정하면 이 테스트가 먼저 깨진다.
         /// </summary>
@@ -52,6 +52,7 @@ namespace Lumen.Core.Tests
                 Assert.IsTrue(result.Solvable, summary);
                 Assert.Greater(result.MinPlacements, 0, "거울 없이 풀리는 레벨: " + summary);
                 Assert.AreEqual(result.MinPlacements, definition.SolverMinPlacements, "solverMinPlacements 불일치: " + summary);
+                Assert.AreEqual(result.MinActions, definition.SolverMinActions, "solverMinActions 불일치: " + summary);
 
                 var number = LevelNumber(definition.Id);
                 if (number >= 8)

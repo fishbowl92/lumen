@@ -105,6 +105,8 @@ namespace Lumen.EditorTools
                 if (r.MinPlacements == 0) row.Warnings.Add("Solvable without placing any mirror.");
                 if (r.MinPlacements != d.SolverMinPlacements)
                     row.Warnings.Add($"solverMinPlacements in JSON is {d.SolverMinPlacements}, solver says {r.MinPlacements}.");
+                if (r.MinActions != d.SolverMinActions)
+                    row.Warnings.Add($"solverMinActions (par) in JSON is {d.SolverMinActions}, solver says {r.MinActions}.");
                 if (LevelNumber(d.Id) >= 8 && r.SolutionCount > 3)
                     row.Warnings.Add($"Level 8+ must have 3 solutions or fewer (has {r.SolutionCount}).");
             }
@@ -113,7 +115,7 @@ namespace Lumen.EditorTools
             return row;
         }
 
-        private static readonly float[] Widths = { 110, 120, 60, 50, 90, 80, 70, 60, 60, 90, 60 };
+        private static readonly float[] Widths = { 110, 120, 60, 50, 90, 80, 70, 70, 60, 60, 90, 60 };
 
         private static void Header()
         {
@@ -121,7 +123,7 @@ namespace Lumen.EditorTools
             {
                 string[] titles =
                 {
-                    "File", "Name", "Size", "Peds", "Inventory P/L/S", "Min json/solver", "Solutions", "Floors",
+                    "File", "Name", "Size", "Peds", "Inventory P/L/S", "Min json/solver", "Par json/solver", "Solutions", "Floors",
                     "Near miss", "Search space", "ms"
                 };
                 for (var i = 0; i < titles.Length; i++)
@@ -155,11 +157,12 @@ namespace Lumen.EditorTools
                     Cell(d.Pedestals.Count.ToString(), 3);
                     Cell($"{d.InventoryOf(PieceType.PlaneMirror)} / {d.InventoryOf(PieceType.LiftMirror)} / {d.InventoryOf(PieceType.Splitter)}", 4);
                     Cell($"{d.SolverMinPlacements} / {r.MinPlacements}", 5);
-                    Cell($"{r.SolutionCount} ({r.MinSolutionCount} min)", 6);
-                    Cell(r.FloorChanges.ToString(), 7);
-                    Cell(r.NearMisses.ToString(), 8);
-                    Cell(r.SearchSpace.ToString("N0"), 9);
-                    Cell(row.Milliseconds.ToString(), 10);
+                    Cell($"{d.SolverMinActions} / {r.MinActions}", 6);
+                    Cell($"{r.SolutionCount} ({r.MinSolutionCount} min)", 7);
+                    Cell(r.FloorChanges.ToString(), 8);
+                    Cell(r.NearMisses.ToString(), 9);
+                    Cell(r.SearchSpace.ToString("N0"), 10);
+                    Cell(row.Milliseconds.ToString(), 11);
                 }
             }
 
@@ -176,7 +179,7 @@ namespace Lumen.EditorTools
                 var solutions = row.Result.Solutions;
                 for (var i = 0; i < solutions.Count && i < MaxShownSolutions; i++)
                 {
-                    EditorGUILayout.LabelField($"[{solutions[i].Count}] floors {solutions[i].FloorChanges}", solutions[i].ToString());
+                    EditorGUILayout.LabelField($"[{solutions[i].Count}] moves {solutions[i].Actions} floors {solutions[i].FloorChanges}", solutions[i].ToString());
                 }
 
                 if (solutions.Count > MaxShownSolutions)

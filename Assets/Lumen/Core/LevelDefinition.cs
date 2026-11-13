@@ -26,7 +26,8 @@ namespace Lumen.Core
             List<(Int3, Piece)> fixedPieces,
             HashSet<Int3> pedestals,
             Dictionary<PieceType, int> inventory,
-            int solverMinPlacements)
+            int solverMinPlacements,
+            int solverMinActions)
         {
             Id = id;
             Name = name;
@@ -38,6 +39,7 @@ namespace Lumen.Core
             _pedestals = pedestals;
             _inventory = inventory;
             SolverMinPlacements = solverMinPlacements;
+            SolverMinActions = solverMinActions;
         }
 
         public string Id { get; }
@@ -56,8 +58,11 @@ namespace Lumen.Core
 
         public IReadOnlyCollection<Int3> Pedestals => _pedestals;
 
-        /// <summary>솔버가 계산한 최소 유효 배치 수. 별 계산의 기준.</summary>
+        /// <summary>솔버가 계산한 최소 유효 배치 수(난이도 지표).</summary>
         public int SolverMinPlacements { get; }
+
+        /// <summary>솔버가 계산한 최소 조작 수(Par). 별 계산의 기준.</summary>
+        public int SolverMinActions { get; }
 
         public bool IsPedestal(Int3 position) => _pedestals.Contains(position);
 
@@ -154,7 +159,7 @@ namespace Lumen.Core
 
             var definition = new LevelDefinition(
                 id, data.name ?? id, size, sources, crystals, walls, fixedPieces, pedestals, inventory,
-                data.solverMinPlacements);
+                data.solverMinPlacements, data.solverMinActions);
 
             // 칸 겹침·격자 밖 좌표를 Grid 규칙으로 검사한다.
             Grid grid;

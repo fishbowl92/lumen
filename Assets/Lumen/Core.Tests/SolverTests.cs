@@ -4,7 +4,7 @@ using NUnit.Framework;
 namespace Lumen.Core.Tests
 {
     /// <summary>
-    /// T20~T26: 솔버. 기대값은 파이썬 전수 탐색(reference/solver_bruteforce.py)으로 구했다.
+    /// T20~T26, T29: 솔버. 기대값은 파이썬 전수 탐색(reference/solver_bruteforce.py)으로 구했다.
     /// </summary>
     [TestFixture]
     public class SolverTests
@@ -124,6 +124,26 @@ namespace Lumen.Core.Tests
             Assert.AreEqual(1, r.SolutionCount);
             Assert.AreEqual("(1, 0, 1) Splitter /", r.Solutions[0].Key);
             Assert.AreEqual(3, r.NearMisses);
+        }
+
+        [Test]
+        public void T29_ParCountsPlacementsAndRotations()
+        {
+            Assert.AreEqual(0, PieceRules.RotationsTo(PieceType.PlaneMirror, PieceState.Slash));
+            Assert.AreEqual(1, PieceRules.RotationsTo(PieceType.PlaneMirror, PieceState.Backslash));
+            Assert.AreEqual(0, PieceRules.RotationsTo(PieceType.LiftMirror, PieceState.XRise));
+            Assert.AreEqual(1, PieceRules.RotationsTo(PieceType.LiftMirror, PieceState.ZRise));
+            Assert.AreEqual(2, PieceRules.RotationsTo(PieceType.LiftMirror, PieceState.XFall));
+            Assert.AreEqual(3, PieceRules.RotationsTo(PieceType.LiftMirror, PieceState.ZFall));
+
+            Assert.AreEqual(1, Solve(TestLevels.Level05Data()).MinActions); // 승강 XRise: 배치 1
+
+            // 1레벨을 ''로만 풀리게 바꾸면: 광원 (0,0,1) 동쪽 → (1,0,1) '' → 남쪽 (1,0,0)
+            var data = TestLevels.Level01Data();
+            data.crystals = new[] { C(1, 0) };
+            var r = Solve(data);
+            Assert.AreEqual("(1, 0, 1) Plane \\", r.Solutions[0].Key);
+            Assert.AreEqual(2, r.MinActions); // 배치 1 + 회전 1
         }
 
         [Test]

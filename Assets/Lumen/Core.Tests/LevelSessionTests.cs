@@ -3,7 +3,7 @@ using static Lumen.Core.Tests.TestGrids;
 
 namespace Lumen.Core.Tests
 {
-    /// <summary>T10~T15, T17, T19: 5레벨 풀이, 배치 규칙, 되돌리기, 유효 배치와 별.</summary>
+    /// <summary>T10~T15, T17, T19, T28: 5레벨 풀이, 배치 규칙, 되돌리기, 유효 배치, 조작 수와 별.</summary>
     [TestFixture]
     public class LevelSessionTests
     {
@@ -163,17 +163,41 @@ namespace Lumen.Core.Tests
             Assert.AreEqual(3, session.Stars);
         }
 
+        // 별 규칙(11/13 변경): 조작 수 ≤ Par+2 → 3, ≤ Par×2+2 → 2, 그 밖 → 1
         [TestCase(1, 1, 3)]
-        [TestCase(0, 1, 3)]
-        [TestCase(2, 1, 2)]
-        [TestCase(3, 1, 2)]
-        [TestCase(4, 1, 1)]
-        [TestCase(9, 1, 1)]
-        [TestCase(5, 5, 3)]
-        [TestCase(8, 5, 1)]
-        public void T19_StarRule(int effective, int min, int expectedStars)
+        [TestCase(3, 1, 3)]
+        [TestCase(4, 1, 2)]
+        [TestCase(5, 1, 1)]
+        [TestCase(6, 4, 3)]
+        [TestCase(7, 4, 2)]
+        [TestCase(10, 4, 2)]
+        [TestCase(11, 4, 1)]
+        public void T19_StarRule(int moves, int par, int expectedStars)
         {
-            Assert.AreEqual(expectedStars, LevelSession.ScoreStars(effective, min));
+            Assert.AreEqual(expectedStars, LevelSession.ScoreStars(moves, par));
+        }
+
+        [Test]
+        public void T28_MovesCountEveryChangeAndResetClearsThem()
+        {
+            var session = TestLevels.Level05();
+
+            Assert.IsTrue(session.TryPlace(Pedestal2, PieceType.PlaneMirror)); // 1
+            Assert.IsTrue(session.TryRotate(Pedestal2));                         // 2
+            Assert.IsTrue(session.TryRemove(Pedestal2));                         // 3
+            Assert.IsTrue(session.Undo());                                       // 4 (평면 거울이 돌아온다)
+            Assert.IsFalse(session.TryRotate(Pedestal1), "빈 칸 회전은 조작으로 세지 않는다");
+            Assert.AreEqual(4, session.MoveCount);
+
+            Assert.IsTrue(session.TryPlace(Pedestal1, PieceType.LiftMirror));    // 5, 클리어
+            Assert.IsTrue(session.IsCleared);
+            Assert.AreEqual(5, session.MoveCount);
+            Assert.AreEqual(1, session.Stars, "Par 1, 조작 5 → 별 1개");
+
+            session.Reset();
+            Assert.AreEqual(0, session.MoveCount);
+            Assert.IsTrue(session.TryPlace(Pedestal1, PieceType.LiftMirror));
+            Assert.AreEqual(3, session.Stars, "다시 시작해 한 번에 풀면 별 3개");
         }
 
         private static Direction Rotate(Direction d)

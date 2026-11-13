@@ -10,5 +10,6 @@
   "fixedPieces": [],
   "pedestals": [{ "x": 1, "y": 0, "z": 0 }, { "x": 1, "y": 0, "z": 1 }, { "x": 1, "y": 0, "z": 2 }, { "x": 3, "y": 0, "z": 2 }, { "x": 3, "y": 0, "z": 3 }, { "x": 2, "y": 1, "z": 2 }, { "x": 3, "y": 1, "z": 2 }, { "x": 5, "y": 1, "z": 2 }],
   "inventory": { "plane": 2, "lift": 3, "splitter": 0 },
-  "solverMinPlacements": 4
+  "solverMinPlacements": 4,
+  "solverMinActions": 7
 }

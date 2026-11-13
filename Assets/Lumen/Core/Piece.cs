@@ -87,6 +87,23 @@ namespace Lumen.Core
             }
         }
 
+        /// <summary>처음 놓은 상태에서 이 상태가 되기까지 필요한 회전(좌클릭) 횟수.</summary>
+        public static int RotationsTo(PieceType type, PieceState state)
+        {
+            if (!IsValidState(type, state))
+            {
+                throw new ArgumentException($"{type}에는 {state} 상태를 쓸 수 없다.", nameof(state));
+            }
+
+            var count = 0;
+            for (var current = InitialState(type); current != state; current = NextState(type, current))
+            {
+                count++;
+            }
+
+            return count;
+        }
+
         /// <summary>
         /// 좌클릭 한 번(위에서 볼 때 90° 회전) 뒤의 상태.
         /// 평면 거울·분할기: / → \ → /

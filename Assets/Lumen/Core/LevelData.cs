@@ -21,6 +21,7 @@ namespace Lumen.Core
         public CellData[] pedestals;
         public InventoryData inventory;
         public int solverMinPlacements;
+        public int solverMinActions; // 별 기준(Par): 빈 판에서 해까지 가는 최소 조작 수
     }
 
     [Serializable]

@@ -14,6 +14,8 @@ namespace Lumen.Game
         private const float TopBarHeight = 44f;
         private const float BottomBarHeight = 56f;
         private const float DragThreshold = 6f;
+        private const float ClearPanelDelay = 1.2f; // 클리어 연출을 보여 준 뒤 결과 창을 띄운다
+        private const float ClearPanelFade = 0.25f;
 
         private static readonly PieceType[] SelectableTypes =
             { PieceType.PlaneMirror, PieceType.LiftMirror, PieceType.Splitter };
@@ -30,6 +32,8 @@ namespace Lumen.Game
         private Vector2 _rightPressPosition;
         private bool _rightDragging;
         private string _message;
+        private HudSkin _skin;
+        private float _clearedAt = -1f;
 
         private void Start()
         {
@@ -57,6 +61,7 @@ namespace Lumen.Game
             _levelIndex = index;
             _session = new LevelSession(_levels[index]);
             _showLevelList = false;
+            _clearedAt = -1f;
             _board.Build(_session);
 
             var size = _session.Definition.Size;
@@ -72,6 +77,7 @@ namespace Lumen.Game
                 return;
             }
 
+            _board.Tick(Time.deltaTime);
             HandleKeyboard(Keyboard.current);
             HandleMouse(Mouse.current);
         }
@@ -189,6 +195,15 @@ namespace Lumen.Game
                 var id = _session.Definition.Id;
                 _bestStars.TryGetValue(id, out var best);
                 _bestStars[id] = Mathf.Max(best, _session.Stars);
+                if (_clearedAt < 0f)
+                {
+                    _clearedAt = Time.time;
+                    _board.PlayClearEffect();
+                }
+            }
+            else
+            {
+                _clearedAt = -1f;
             }
 
             if (_session.Remaining(_selected) == 0)
@@ -230,129 +245,163 @@ namespace Lumen.Game
 
         private void OnGUI()
         {
-            var label = new GUIStyle(GUI.skin.label) { fontSize = 16, alignment = TextAnchor.MiddleLeft };
-            var big = new GUIStyle(GUI.skin.label) { fontSize = 30, alignment = TextAnchor.MiddleCenter };
-            var button = new GUIStyle(GUI.skin.button) { fontSize = 14 };
+            _skin ??= new HudSkin();
+            var skin = _skin;
 
             if (_session == null)
             {
-                GUI.Label(new Rect(20, 20, 600, 40), _message ?? "Loading...", label);
+                GUI.Label(new Rect(20, 20, 600, 40), _message ?? "Loading...", skin.Label);
                 return;
             }
 
             var definition = _session.Definition;
+            var width = Screen.width;
 
-            // 상단 바: 레벨, 배치 수
-            GUI.Box(new Rect(0, 0, Screen.width, TopBarHeight), GUIContent.none);
-            GUI.Label(new Rect(16, 0, 360, TopBarHeight),
-                $"LEVEL {_levelIndex + 1} / {_levels.Count}   ({definition.Id})", label);
-            GUI.Label(new Rect(Screen.width * 0.5f - 120, 0, 300, TopBarHeight),
-                $"Mirrors used {_session.EffectivePlacedCount}  /  Best {definition.SolverMinPlacements}", label);
-            if (GUI.Button(new Rect(Screen.width - 110, 7, 96, 30), "Levels", button))
+            // 상단 바: 레벨 번호, 배치 수, 레벨 목록
+            GUI.Box(new Rect(0, 0, width, TopBarHeight), GUIContent.none, skin.Bar);
+            GUI.Label(new Rect(16, 0, 260, TopBarHeight), $"LEVEL {_levelIndex + 1} / {_levels.Count}", skin.Label);
+            GUI.Label(new Rect(width * 0.5f - 160, 0, 320, TopBarHeight),
+                $"Moves  {_session.MoveCount}   ·   Par  {definition.SolverMinActions}", skin.LabelCenter);
+            if (GUI.Button(new Rect(width - 112, 7, 100, 30), _showLevelList ? "Close" : "Levels",
+                    _showLevelList ? skin.Selected : skin.Button))
             {
                 _showLevelList = !_showLevelList;
             }
 
-            // 하단 바: 인벤토리와 조작 버튼
+            // 하단 바: 왼쪽은 거울 선택(선택한 것은 주황), 오른쪽은 되돌리기·리셋·층 보기
             var barY = Screen.height - BottomBarHeight;
-            GUI.Box(new Rect(0, barY, Screen.width, BottomBarHeight), GUIContent.none);
+            var buttonY = barY + 10;
+            const float ButtonHeight = 36f;
+            GUI.Box(new Rect(0, barY, width, BottomBarHeight), GUIContent.none, skin.Bar);
+
             var x = 12f;
-            foreach (var type in SelectableTypes)
+            for (var i = 0; i < SelectableTypes.Length; i++)
             {
+                var type = SelectableTypes[i];
                 var count = _session.Remaining(type);
-                var text = $"{(type == _selected ? "> " : "")}{ShortName(type)}  {count}";
                 GUI.enabled = count > 0 && !_session.IsCleared;
-                if (GUI.Button(new Rect(x, barY + 10, 132, 36), text, button))
+                var style = type == _selected && GUI.enabled ? skin.Selected : skin.Button;
+                if (GUI.Button(new Rect(x, buttonY, 144, ButtonHeight), $"[{i + 1}]  {PieceName(type)}  x{count}", style))
                 {
                     Select(type);
                 }
 
-                x += 140f;
+                x += 152f;
             }
 
+            var right = width - 12f;
+            var floorText = _board.VisibleFloor < 0 ? "Floor: All" : $"Floor: {_board.VisibleFloor + 1}";
+            right -= 156f;
+            GUI.enabled = true;
+            if (GUI.Button(new Rect(right, buttonY, 156, ButtonHeight), floorText + "  [Tab]",
+                    _board.VisibleFloor < 0 ? skin.Button : skin.Selected))
+            {
+                _board.CycleFloor();
+            }
+
+            right -= 120f;
+            if (GUI.Button(new Rect(right, buttonY, 112, ButtonHeight), "Reset  [R]", skin.Button))
+            {
+                _session.Reset();
+                Changed();
+            }
+
+            right -= 120f;
             GUI.enabled = _session.CanUndo;
-            if (GUI.Button(new Rect(Screen.width - 330, barY + 10, 100, 36), "Undo (Z)", button) && _session.Undo())
+            if (GUI.Button(new Rect(right, buttonY, 112, ButtonHeight), "Undo  [Z]", skin.Button) && _session.Undo())
             {
                 Changed();
             }
 
             GUI.enabled = true;
-            if (GUI.Button(new Rect(Screen.width - 222, barY + 10, 100, 36), "Reset (R)", button))
-            {
-                _session.Reset();
-                Changed();
-            }
+            GUI.Label(new Rect(16, barY - 24, width - 32, 22),
+                "Left click: place / rotate     Right click: remove     Right drag: orbit     Wheel: zoom", skin.Hint);
 
-            var floorText = _board.VisibleFloor < 0 ? "Floors: All" : $"Floor {_board.VisibleFloor + 1}";
-            if (GUI.Button(new Rect(Screen.width - 114, barY + 10, 104, 36), floorText + " (Tab)", button))
+            if (_session.IsCleared && _clearedAt >= 0f)
             {
-                _board.CycleFloor();
-            }
-
-            GUI.Label(new Rect(16, barY - 26, Screen.width - 32, 24),
-                "Left click: place / rotate    Right click: remove    Right drag: orbit    Wheel: zoom",
-                new GUIStyle(label) { fontSize = 12 });
-
-            if (_session.IsCleared)
-            {
-                DrawClearPanel(big, label, button);
+                var shown = Time.time - _clearedAt - ClearPanelDelay;
+                if (shown >= 0f)
+                {
+                    var previous = GUI.color;
+                    GUI.color = new Color(1f, 1f, 1f, Mathf.Clamp01(shown / ClearPanelFade));
+                    DrawClearPanel(skin);
+                    GUI.color = previous;
+                }
             }
 
             if (_showLevelList)
             {
-                DrawLevelList(label, button);
+                DrawLevelList(skin);
             }
         }
 
-        private void DrawClearPanel(GUIStyle big, GUIStyle label, GUIStyle button)
+        private void DrawClearPanel(HudSkin skin)
         {
             var rect = new Rect(Screen.width * 0.5f - 170, Screen.height * 0.5f - 110, 340, 200);
-            GUI.Box(rect, GUIContent.none);
-            GUI.Label(new Rect(rect.x, rect.y + 16, rect.width, 44), "CLEAR!", big);
-            var stars = _session.Stars;
-            GUI.Label(new Rect(rect.x, rect.y + 62, rect.width, 36),
-                new string('*', stars) + new string('-', 3 - stars) + $"   {stars} / 3 stars",
-                new GUIStyle(label) { alignment = TextAnchor.MiddleCenter, fontSize = 20 });
+            GUI.Box(rect, GUIContent.none, skin.Panel);
+            GUI.Label(new Rect(rect.x, rect.y + 14, rect.width, 44), "CLEAR!", skin.Title);
+            DrawStars(skin, new Vector2(rect.center.x, rect.y + 82), _session.Stars, 40f, 8f);
+            GUI.Label(new Rect(rect.x, rect.y + 102, rect.width, 22),
+                $"Moves {_session.MoveCount}   ·   Par {_session.Definition.SolverMinActions}", skin.HintCenter);
 
             var hasNext = _levelIndex + 1 < _levels.Count;
-            if (GUI.Button(new Rect(rect.x + 20, rect.y + 130, 140, 44), "Retry", button))
+            if (GUI.Button(new Rect(rect.x + 20, rect.y + 130, 140, 44), "Retry", skin.Button))
             {
                 _session.Reset();
                 Changed();
             }
 
-            if (GUI.Button(new Rect(rect.x + 180, rect.y + 130, 140, 44), hasNext ? "Next level" : "All clear!", button) &&
-                hasNext)
+            if (GUI.Button(new Rect(rect.x + 180, rect.y + 130, 140, 44), hasNext ? "Next level" : "All clear!",
+                    skin.Selected) && hasNext)
             {
                 LoadLevel(_levelIndex + 1);
             }
         }
 
-        private void DrawLevelList(GUIStyle label, GUIStyle button)
+        private void DrawLevelList(HudSkin skin)
         {
             // 레벨 10개가 960×540 화면의 하단 바 위에 들어가도록 줄 간격을 34로 둔다.
             var height = 52 + _levels.Count * 34;
-            var rect = new Rect(Screen.width - 260, TopBarHeight + 8, 250, height);
-            GUI.Box(rect, GUIContent.none);
-            GUI.Label(new Rect(rect.x + 12, rect.y + 8, 220, 30), "Levels", label);
+            var rect = new Rect(Screen.width - 262, TopBarHeight + 8, 250, height);
+            GUI.Box(rect, GUIContent.none, skin.Panel);
+            GUI.Label(new Rect(rect.x + 14, rect.y + 8, 220, 30), "Levels", skin.Label);
             for (var i = 0; i < _levels.Count; i++)
             {
                 _bestStars.TryGetValue(_levels[i].Id, out var best);
-                var text = $"{i + 1}. {_levels[i].Id}   {new string('*', best)}";
-                if (GUI.Button(new Rect(rect.x + 12, rect.y + 44 + i * 34, 226, 30), text, button))
+                var style = i == _levelIndex ? skin.Selected : skin.Button;
+                var row = new Rect(rect.x + 12, rect.y + 44 + i * 34, 226, 30);
+                if (GUI.Button(row, GUIContent.none, style))
                 {
                     LoadLevel(i);
+                }
+
+                GUI.Label(new Rect(row.x + 14, row.y, 60, row.height), $"{i + 1}", i == _levelIndex ? skin.LabelDark : skin.Label);
+                if (best > 0)
+                {
+                    DrawStars(skin, new Vector2(row.xMax - 48, row.center.y), best, 18f, 3f);
                 }
             }
         }
 
-        private static string ShortName(PieceType type)
+        /// <summary>별을 가운데 정렬로 그린다. 얻은 별은 채운 별, 나머지는 빈 별(글꼴에 ★가 없어 그림으로 그린다).</summary>
+        private static void DrawStars(HudSkin skin, Vector2 center, int earned, float size, float gap)
+        {
+            var total = 3 * size + 2 * gap;
+            var x = center.x - total * 0.5f;
+            for (var i = 0; i < 3; i++)
+            {
+                GUI.DrawTexture(new Rect(x, center.y - size * 0.5f, size, size), i < earned ? skin.StarFilled : skin.StarEmpty);
+                x += size + gap;
+            }
+        }
+
+        private static string PieceName(PieceType type)
         {
             switch (type)
             {
-                case PieceType.PlaneMirror: return "1 Mirror";
-                case PieceType.LiftMirror: return "2 Lift";
-                default: return "3 Splitter";
+                case PieceType.PlaneMirror: return "Mirror";
+                case PieceType.LiftMirror: return "Lift";
+                default: return "Splitter";
             }
         }
     }

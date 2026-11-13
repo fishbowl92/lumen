@@ -49,8 +49,13 @@ namespace Lumen.Core
             }
         }
 
-        /// <summary>클리어 전에는 0, 클리어 뒤에는 1~3.</summary>
-        public int Stars => IsCleared ? ScoreStars(EffectivePlacedCount, Definition.SolverMinPlacements) : 0;
+        /// <summary>
+        /// 이번 시도의 조작 수. 배치·회전·회수·되돌리기가 하나씩 늘리고, 리셋하면 0이 된다.
+        /// </summary>
+        public int MoveCount { get; private set; }
+
+        /// <summary>클리어 전에는 0, 클리어 뒤에는 1~3. 기준은 조작 수(11/13 변경).</summary>
+        public int Stars => IsCleared ? ScoreStars(MoveCount, Definition.SolverMinActions) : 0;
 
         public bool CanUndo => !IsCleared && _history.Count > 0;
 
@@ -59,17 +64,17 @@ namespace Lumen.Core
         public bool IsPlayerPiece(Int3 position) => _placed.Contains(position);
 
         /// <summary>
-        /// 별 규칙(11/13 결정): 유효 배치 수가 최소 이하면 3개, 최소보다 1~2개 많으면 2개, 3개 이상 많으면 1개.
+        /// 별 규칙(11/13 변경): 조작 수가 Par+2 이하면 3개, Par×2+2 이하면 2개, 그보다 많으면 1개.
+        /// 해가 1개뿐인 레벨이 많아 "빛을 꺾은 거울 수"로는 별이 항상 3개가 되어 조작 수로 바꿨다.
         /// </summary>
-        public static int ScoreStars(int effectivePlacements, int solverMinPlacements)
+        public static int ScoreStars(int moves, int par)
         {
-            var extra = effectivePlacements - solverMinPlacements;
-            if (extra <= 0)
+            if (moves <= par + 2)
             {
                 return 3;
             }
 
-            return extra <= 2 ? 2 : 1;
+            return moves <= par * 2 + 2 ? 2 : 1;
         }
 
         public bool CanPlace(Int3 position, PieceType type) =>
@@ -88,6 +93,7 @@ namespace Lumen.Core
 
             Place(position, new Piece(type, PieceRules.InitialState(type), false));
             _history.Push(HistoryEntry.Placed(position));
+            MoveCount++;
             Refresh();
             return true;
         }
@@ -102,6 +108,7 @@ namespace Lumen.Core
 
             Grid.ReplacePiece(position, piece.WithState(PieceRules.NextState(piece.Type, piece.State)));
             _history.Push(HistoryEntry.Rotated(position, piece.State));
+            MoveCount++;
             Refresh();
             return true;
         }
@@ -116,6 +123,7 @@ namespace Lumen.Core
 
             Remove(position, piece.Type);
             _history.Push(HistoryEntry.Removed(position, piece));
+            MoveCount++;
             Refresh();
             return true;
         }
@@ -144,6 +152,7 @@ namespace Lumen.Core
                     break;
             }
 
+            MoveCount++;
             Refresh();
             return true;
         }
@@ -161,6 +170,7 @@ namespace Lumen.Core
             }
 
             IsCleared = false;
+            MoveCount = 0;
             Refresh();
         }
 

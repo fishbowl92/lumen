@@ -10,5 +10,6 @@
   "fixedPieces": [{ "x": 2, "y": 2, "z": 6, "type": "Lift", "state": "XRise" }, { "x": 6, "y": 0, "z": 4, "type": "Plane", "state": "\\" }],
   "pedestals": [{ "x": 1, "y": 0, "z": 2 }, { "x": 2, "y": 0, "z": 2 }, { "x": 6, "y": 0, "z": 2 }, { "x": 6, "y": 0, "z": 3 }, { "x": 3, "y": 0, "z": 4 }, { "x": 6, "y": 0, "z": 5 }, { "x": 2, "y": 0, "z": 6 }, { "x": 6, "y": 2, "z": 5 }, { "x": 5, "y": 2, "z": 6 }],
   "inventory": { "plane": 3, "lift": 2, "splitter": 1 },
-  "solverMinPlacements": 5
+  "solverMinPlacements": 5,
+  "solverMinActions": 11
 }
