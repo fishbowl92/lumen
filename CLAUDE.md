@@ -7,7 +7,7 @@
 - `Assets/Lumen/Core/` — 규칙 코어. **순수 C#, UnityEngine 금지** (asmdef `noEngineReferences: true`). 게임과 솔버가 함께 쓴다
 - `Assets/Lumen/Core.Tests/` — EditMode 테스트. 규칙을 바꾸면 테스트부터 고친다
 - `Assets/Lumen/Game/` — Unity 화면·입력·카메라
-- `Assets/Lumen/Levels/` — 레벨 JSON (JsonUtility 호환 스키마)
+- `Assets/Lumen/Resources/Levels/` — 레벨 JSON (JsonUtility 호환 스키마, 파일 이름순으로 레벨 순서가 정해진다)
 - 규칙 참조 구현: `../reference/tracer.py`
 
 ## 지켜야 할 것
