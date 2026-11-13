@@ -1,0 +1,14 @@
+{
+  "id": "level08",
+  "name": "두 층 두 목표",
+  "sizeX": 5,
+  "sizeY": 2,
+  "sizeZ": 5,
+  "sources": [{ "x": 4, "y": 0, "z": 0, "dir": "North" }],
+  "crystals": [{ "x": 0, "y": 1, "z": 1 }, { "x": 1, "y": 0, "z": 2 }],
+  "walls": [{ "x": 0, "y": 0, "z": 3 }, { "x": 4, "y": 1, "z": 1 }, { "x": 0, "y": 0, "z": 2 }],
+  "fixedPieces": [],
+  "pedestals": [{ "x": 0, "y": 0, "z": 1 }, { "x": 4, "y": 0, "z": 1 }, { "x": 4, "y": 0, "z": 2 }, { "x": 3, "y": 0, "z": 3 }, { "x": 4, "y": 0, "z": 3 }, { "x": 4, "y": 0, "z": 4 }],
+  "inventory": { "plane": 2, "lift": 1, "splitter": 1 },
+  "solverMinPlacements": 3
+}

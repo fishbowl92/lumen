@@ -1,0 +1,14 @@
+{
+  "id": "level10",
+  "name": "빛의 정원",
+  "sizeX": 7,
+  "sizeY": 3,
+  "sizeZ": 7,
+  "sources": [{ "x": 6, "y": 0, "z": 0, "dir": "North" }],
+  "crystals": [{ "x": 5, "y": 2, "z": 0 }, { "x": 1, "y": 2, "z": 2 }],
+  "walls": [{ "x": 2, "y": 0, "z": 1 }, { "x": 4, "y": 1, "z": 5 }, { "x": 4, "y": 0, "z": 6 }, { "x": 0, "y": 1, "z": 2 }],
+  "fixedPieces": [{ "x": 2, "y": 2, "z": 6, "type": "Lift", "state": "XRise" }, { "x": 6, "y": 0, "z": 4, "type": "Plane", "state": "\\" }],
+  "pedestals": [{ "x": 1, "y": 0, "z": 2 }, { "x": 2, "y": 0, "z": 2 }, { "x": 6, "y": 0, "z": 2 }, { "x": 6, "y": 0, "z": 3 }, { "x": 3, "y": 0, "z": 4 }, { "x": 6, "y": 0, "z": 5 }, { "x": 2, "y": 0, "z": 6 }, { "x": 6, "y": 2, "z": 5 }, { "x": 5, "y": 2, "z": 6 }],
+  "inventory": { "plane": 3, "lift": 2, "splitter": 1 },
+  "solverMinPlacements": 5
+}

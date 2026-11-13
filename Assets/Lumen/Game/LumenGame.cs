@@ -330,7 +330,8 @@ namespace Lumen.Game
 
         private void DrawLevelList(GUIStyle label, GUIStyle button)
         {
-            var height = 60 + _levels.Count * 40;
+            // 레벨 10개가 960×540 화면의 하단 바 위에 들어가도록 줄 간격을 34로 둔다.
+            var height = 52 + _levels.Count * 34;
             var rect = new Rect(Screen.width - 260, TopBarHeight + 8, 250, height);
             GUI.Box(rect, GUIContent.none);
             GUI.Label(new Rect(rect.x + 12, rect.y + 8, 220, 30), "Levels", label);
@@ -338,7 +339,7 @@ namespace Lumen.Game
             {
                 _bestStars.TryGetValue(_levels[i].Id, out var best);
                 var text = $"{i + 1}. {_levels[i].Id}   {new string('*', best)}";
-                if (GUI.Button(new Rect(rect.x + 12, rect.y + 44 + i * 40, 226, 34), text, button))
+                if (GUI.Button(new Rect(rect.x + 12, rect.y + 44 + i * 34, 226, 30), text, button))
                 {
                     LoadLevel(i);
                 }

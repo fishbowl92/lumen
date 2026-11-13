@@ -1,0 +1,14 @@
+{
+  "id": "level06",
+  "name": "계단",
+  "sizeX": 5,
+  "sizeY": 2,
+  "sizeZ": 5,
+  "sources": [{ "x": 4, "y": 0, "z": 4, "dir": "West" }],
+  "crystals": [{ "x": 4, "y": 0, "z": 2 }],
+  "walls": [{ "x": 0, "y": 0, "z": 2 }, { "x": 2, "y": 1, "z": 1 }, { "x": 0, "y": 0, "z": 1 }],
+  "fixedPieces": [{ "x": 3, "y": 1, "z": 4, "type": "Lift", "state": "ZFall" }],
+  "pedestals": [{ "x": 0, "y": 0, "z": 4 }, { "x": 1, "y": 0, "z": 4 }, { "x": 2, "y": 0, "z": 4 }, { "x": 3, "y": 0, "z": 4 }, { "x": 3, "y": 1, "z": 2 }, { "x": 4, "y": 1, "z": 2 }],
+  "inventory": { "plane": 2, "lift": 2, "splitter": 0 },
+  "solverMinPlacements": 3
+}

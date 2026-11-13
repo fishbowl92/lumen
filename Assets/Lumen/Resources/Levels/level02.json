@@ -1,0 +1,14 @@
+{
+  "id": "level02",
+  "name": "두 번 꺾기",
+  "sizeX": 4,
+  "sizeY": 1,
+  "sizeZ": 4,
+  "sources": [{ "x": 0, "y": 0, "z": 3, "dir": "South" }],
+  "crystals": [{ "x": 3, "y": 0, "z": 3 }],
+  "walls": [{ "x": 1, "y": 0, "z": 0 }],
+  "fixedPieces": [],
+  "pedestals": [{ "x": 0, "y": 0, "z": 0 }, { "x": 0, "y": 0, "z": 1 }, { "x": 0, "y": 0, "z": 2 }, { "x": 3, "y": 0, "z": 2 }],
+  "inventory": { "plane": 2, "lift": 0, "splitter": 0 },
+  "solverMinPlacements": 2
+}

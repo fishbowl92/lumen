@@ -1,0 +1,14 @@
+{
+  "id": "level03",
+  "name": "막힌 길",
+  "sizeX": 5,
+  "sizeY": 1,
+  "sizeZ": 5,
+  "sources": [{ "x": 0, "y": 0, "z": 0, "dir": "East" }],
+  "crystals": [{ "x": 4, "y": 0, "z": 4 }],
+  "walls": [{ "x": 3, "y": 0, "z": 3 }, { "x": 1, "y": 0, "z": 2 }, { "x": 4, "y": 0, "z": 1 }, { "x": 3, "y": 0, "z": 1 }],
+  "fixedPieces": [],
+  "pedestals": [{ "x": 2, "y": 0, "z": 0 }, { "x": 3, "y": 0, "z": 0 }, { "x": 4, "y": 0, "z": 0 }, { "x": 1, "y": 0, "z": 4 }, { "x": 2, "y": 0, "z": 4 }],
+  "inventory": { "plane": 3, "lift": 0, "splitter": 0 },
+  "solverMinPlacements": 2
+}
