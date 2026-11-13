@@ -24,6 +24,7 @@ namespace Lumen.Game
         private static readonly Color BeamColor = new Color(1.00f, 0.95f, 0.55f);
 
         private const float BeamThickness = 0.08f;
+        private const string BaseMaterialPath = "Materials/LumenBase";
 
         private readonly Transform _root;
         private readonly Material _baseMaterial;
@@ -40,10 +41,17 @@ namespace Lumen.Game
             _root = new GameObject("Board").transform;
             _root.SetParent(parent, false);
 
-            // 기본 도형의 기본 머티리얼(URP Lit)을 복사해 색만 바꿔 쓴다. 웹 빌드에서 셰이더가 빠지는 문제를 피한다.
-            var probe = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            _baseMaterial = probe.GetComponent<Renderer>().sharedMaterial;
-            Object.Destroy(probe);
+            // 런타임에 만든 기본 도형은 빌드에서 내장 파이프라인용 기본 머티리얼을 받아 URP에서 분홍색으로 나온다.
+            // (에디터에서는 URP 기본 머티리얼을 받아 정상으로 보여 문제가 드러나지 않는다.)
+            // Resources 폴더의 에셋은 빌드에 반드시 들어가므로, 거기 둔 URP Lit 머티리얼을 복사해 색만 바꿔 쓴다.
+            _baseMaterial = Resources.Load<Material>(BaseMaterialPath);
+            if (_baseMaterial == null)
+            {
+                Debug.LogError($"Missing material Resources/{BaseMaterialPath}.mat (URP Lit). Objects may render pink.");
+                var probe = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                _baseMaterial = probe.GetComponent<Renderer>().sharedMaterial;
+                Object.Destroy(probe);
+            }
         }
 
         /// <summary>-1이면 모든 층, 0 이상이면 그 층만 보인다.</summary>
