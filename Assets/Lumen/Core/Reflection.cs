@@ -38,5 +38,57 @@ namespace Lumen.Core
                     throw new ArgumentException($"평면 거울 상태가 아니다: {state}", nameof(state));
             }
         }
+
+        /// <summary>
+        /// 승강 거울의 반사 방향. 거울 면과 나란한 광선은 빈칸처럼 통과하므로 들어온 방향을 그대로 돌려준다.
+        /// XRise: 동→위, 아래→서, 서→아래, 위→동 (남북 통과)
+        /// XFall: 동→아래, 위→서, 서→위, 아래→동 (남북 통과)
+        /// ZRise: 북→위, 아래→남, 남→아래, 위→북 (동서 통과)
+        /// ZFall: 북→아래, 위→남, 남→위, 아래→북 (동서 통과)
+        /// </summary>
+        public static Direction ReflectLift(PieceState state, Direction incoming)
+        {
+            switch (state)
+            {
+                case PieceState.XRise:
+                    switch (incoming)
+                    {
+                        case Direction.East: return Direction.Up;
+                        case Direction.Down: return Direction.West;
+                        case Direction.West: return Direction.Down;
+                        case Direction.Up: return Direction.East;
+                        default: return incoming;
+                    }
+                case PieceState.XFall:
+                    switch (incoming)
+                    {
+                        case Direction.East: return Direction.Down;
+                        case Direction.Up: return Direction.West;
+                        case Direction.West: return Direction.Up;
+                        case Direction.Down: return Direction.East;
+                        default: return incoming;
+                    }
+                case PieceState.ZRise:
+                    switch (incoming)
+                    {
+                        case Direction.North: return Direction.Up;
+                        case Direction.Down: return Direction.South;
+                        case Direction.South: return Direction.Down;
+                        case Direction.Up: return Direction.North;
+                        default: return incoming;
+                    }
+                case PieceState.ZFall:
+                    switch (incoming)
+                    {
+                        case Direction.North: return Direction.Down;
+                        case Direction.Up: return Direction.South;
+                        case Direction.South: return Direction.Up;
+                        case Direction.Down: return Direction.North;
+                        default: return incoming;
+                    }
+                default:
+                    throw new ArgumentException($"승강 거울 상태가 아니다: {state}", nameof(state));
+            }
+        }
     }
 }

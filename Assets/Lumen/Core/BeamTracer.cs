@@ -164,7 +164,7 @@ namespace Lumen.Core
 
                         case CellKind.Piece:
                             grid.TryGetPiece(next, out var piece);
-                            alive = ApplyPiece(piece, next, ref direction, ref segmentStart, segments, deflecting);
+                            alive = ApplyPiece(piece, next, ref direction, ref segmentStart, segments, deflecting, pending);
                             position = next;
                             break;
                     }
@@ -182,7 +182,8 @@ namespace Lumen.Core
             ref Direction direction,
             ref Int3 segmentStart,
             List<BeamSegment> segments,
-            HashSet<Int3> deflecting)
+            HashSet<Int3> deflecting,
+            Stack<(Int3 Start, Direction Direction)> pending)
         {
             switch (piece.Type)
             {
@@ -199,8 +200,37 @@ namespace Lumen.Core
                     deflecting.Add(at);
                     return true;
 
+                case PieceType.LiftMirror:
+                {
+                    var outgoing = Reflection.ReflectLift(piece.State, direction);
+                    if (outgoing == direction)
+                    {
+                        // 면과 나란한 광선: 빈칸처럼 통과. 구간도 끊지 않는다.
+                        return true;
+                    }
+
+                    segments.Add(new BeamSegment(segmentStart, at, direction, SegmentEnd.Turned));
+                    direction = outgoing;
+                    segmentStart = at;
+                    deflecting.Add(at);
+                    return true;
+                }
+
+                case PieceType.Splitter:
+                    if (direction.IsVertical())
+                    {
+                        segments.Add(new BeamSegment(segmentStart, at, direction, SegmentEnd.Blocked));
+                        return false;
+                    }
+
+                    // 꺾인 광선은 새 가지로 쌓고, 지금 광선은 직진을 이어 간다.
+                    segments.Add(new BeamSegment(segmentStart, at, direction, SegmentEnd.Split));
+                    pending.Push((at, Reflection.ReflectPlane(piece.State, direction)));
+                    segmentStart = at;
+                    deflecting.Add(at);
+                    return true;
+
                 default:
-                    // 승강 거울·분할기는 C2에서 구현한다. 그 전까지는 벽처럼 막는다.
                     segments.Add(new BeamSegment(segmentStart, at, direction, SegmentEnd.Blocked));
                     return false;
             }
