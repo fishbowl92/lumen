@@ -64,6 +64,21 @@ namespace Lumen.Core
         /// <summary>솔버가 계산한 최소 조작 수(Par). 별 계산의 기준.</summary>
         public int SolverMinActions { get; }
 
+        /// <summary>화면 위 안내 문구(선택). 없으면 빈 목록.</summary>
+        public IReadOnlyList<string> Hints { get; private set; } = Array.Empty<string>();
+
+        /// <summary>조작 수에 맞는 안내 문구. 조작이 문구 수보다 많으면 마지막 문구, 문구가 없으면 빈 문자열.</summary>
+        public string HintFor(int moveCount)
+        {
+            if (Hints.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var index = moveCount < 0 ? 0 : Math.Min(moveCount, Hints.Count - 1);
+            return Hints[index] ?? string.Empty;
+        }
+
         public bool IsPedestal(Int3 position) => _pedestals.Contains(position);
 
         public int InventoryOf(PieceType type) => _inventory.TryGetValue(type, out var count) ? count : 0;
@@ -159,7 +174,10 @@ namespace Lumen.Core
 
             var definition = new LevelDefinition(
                 id, data.name ?? id, size, sources, crystals, walls, fixedPieces, pedestals, inventory,
-                data.solverMinPlacements, data.solverMinActions);
+                data.solverMinPlacements, data.solverMinActions)
+            {
+                Hints = data.hints ?? Array.Empty<string>()
+            };
 
             // 칸 겹침·격자 밖 좌표를 Grid 규칙으로 검사한다.
             Grid grid;

@@ -4,7 +4,7 @@ using static Lumen.Core.Tests.TestGrids;
 
 namespace Lumen.Core.Tests
 {
-    /// <summary>T16: 레벨 데이터 변환과 검증.</summary>
+    /// <summary>T16, T30: 레벨 데이터 변환과 검증, 안내 문구.</summary>
     [TestFixture]
     public class LevelDefinitionTests
     {
@@ -30,6 +30,19 @@ namespace Lumen.Core.Tests
             Assert.AreEqual(1, definition.InventoryOf(PieceType.LiftMirror));
             Assert.AreEqual(0, definition.InventoryOf(PieceType.Splitter));
             Assert.AreEqual(1, definition.SolverMinPlacements);
+        }
+
+        [Test]
+        public void T30_HintsFollowMoveCount()
+        {
+            var data = TestLevels.Level05Data();
+            Assert.AreEqual(string.Empty, LevelDefinition.FromData(data).HintFor(0), "문구가 없으면 빈 문자열");
+
+            data.hints = new[] { "first", "second" };
+            var definition = LevelDefinition.FromData(data);
+            Assert.AreEqual("first", definition.HintFor(0));
+            Assert.AreEqual("second", definition.HintFor(1));
+            Assert.AreEqual("second", definition.HintFor(9), "조작이 더 많으면 마지막 문구를 계속 보여 준다");
         }
 
         [Test]

@@ -35,6 +35,10 @@ namespace Lumen.Game
             Hint = new GUIStyle(Label) { fontSize = 12, normal = { textColor = Muted } };
             HintCenter = new GUIStyle(Hint) { fontSize = 13, alignment = TextAnchor.MiddleCenter };
             Title = new GUIStyle(LabelCenter) { fontSize = 32, fontStyle = FontStyle.Bold };
+            Banner = new GUIStyle(LabelCenter)
+            {
+                fontSize = 16, padding = new RectOffset(18, 18, 8, 8), normal = { background = panel, textColor = Text }
+            };
 
             Button = new GUIStyle(GUI.skin.button)
             {
@@ -65,6 +69,7 @@ namespace Lumen.Game
         public GUIStyle Hint { get; }
         public GUIStyle HintCenter { get; }
         public GUIStyle Title { get; }
+        public GUIStyle Banner { get; }
         public Texture2D StarFilled { get; } = Star(true);
         public Texture2D StarEmpty { get; } = Star(false);
         public GUIStyle Button { get; }

@@ -314,6 +314,16 @@ namespace Lumen.Game
             }
 
             GUI.enabled = true;
+
+            // 레벨 안내 문구(레벨 JSON의 hints). 조작할 때마다 다음 문구로 넘어가고, 클리어하면 사라진다.
+            var hint = definition.HintFor(_session.MoveCount);
+            if (hint.Length > 0 && !_session.IsCleared)
+            {
+                var content = new GUIContent(hint);
+                var size = skin.Banner.CalcSize(content);
+                GUI.Label(new Rect((width - size.x) * 0.5f, TopBarHeight + 12, size.x, size.y), content, skin.Banner);
+            }
+
             GUI.Label(new Rect(16, barY - 24, width - 32, 22),
                 "Left click: place / rotate     Right click: remove     Right drag: orbit     Wheel: zoom", skin.Hint);
 

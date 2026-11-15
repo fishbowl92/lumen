@@ -22,6 +22,7 @@ namespace Lumen.Core
         public InventoryData inventory;
         public int solverMinPlacements;
         public int solverMinActions; // 별 기준(Par): 빈 판에서 해까지 가는 최소 조작 수
+        public string[] hints;       // 선택: 화면 위 안내 문구. 조작 0번일 때 [0], 1번일 때 [1] … 마지막 문구는 계속 보인다
     }
 
     [Serializable]
