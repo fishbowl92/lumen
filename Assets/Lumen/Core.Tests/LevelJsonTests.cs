@@ -31,8 +31,9 @@ namespace Lumen.Core.Tests
         }
 
         /// <summary>
-        /// 모든 레벨이 풀리고, JSON의 최소 배치 수·최소 조작 수(Par)가 솔버 결과와 같은지 확인한다.
-        /// 8레벨부터는 해가 3개 이하여야 한다(기획서 엣지 케이스 표: 답이 너무 많으면 우연히 풀린다).
+        /// 모든 레벨이 풀리고, JSON의 최소 배치 수·Par(최소 배치 해 중 가장 짧은 경로)가 솔버 결과와 같은지 확인한다.
+        /// 레벨 규칙(11/16): 별 3개 해(최소 배치 수 + Par 경로)는 레벨마다 정확히 1개.
+        /// (11/12의 "8레벨부터 해 3개 이하"는 경로 점수 도입으로 삭제. 해가 여럿인 것은 실패의 자유로 본다.)
         /// 레벨을 추가·수정하면 이 테스트가 먼저 깨진다.
         /// </summary>
         [Test]
@@ -52,28 +53,9 @@ namespace Lumen.Core.Tests
                 Assert.IsTrue(result.Solvable, summary);
                 Assert.Greater(result.MinPlacements, 0, "거울 없이 풀리는 레벨: " + summary);
                 Assert.AreEqual(result.MinPlacements, definition.SolverMinPlacements, "solverMinPlacements 불일치: " + summary);
-                Assert.AreEqual(result.MinActions, definition.SolverMinActions, "solverMinActions 불일치: " + summary);
-
-                var number = LevelNumber(definition.Id);
-                if (number >= 8)
-                {
-                    Assert.LessOrEqual(result.SolutionCount, 3, "8레벨 이후 해 3개 초과: " + summary);
-                }
+                Assert.AreEqual(result.ParPath, definition.SolverMinPath, "solverMinPath 불일치: " + summary);
+                Assert.AreEqual(1, result.ParSolutionCount, "별 3개 해가 정확히 1개가 아님: " + summary);
             }
-        }
-
-        private static int LevelNumber(string id)
-        {
-            var digits = new System.Text.StringBuilder();
-            foreach (var c in id)
-            {
-                if (char.IsDigit(c))
-                {
-                    digits.Append(c);
-                }
-            }
-
-            return digits.Length > 0 ? int.Parse(digits.ToString()) : 0;
         }
     }
 }

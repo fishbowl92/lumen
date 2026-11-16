@@ -21,7 +21,7 @@ namespace Lumen.Core
         public CellData[] pedestals;
         public InventoryData inventory;
         public int solverMinPlacements;
-        public int solverMinActions; // 별 기준(Par): 빈 판에서 해까지 가는 최소 조작 수
+        public int solverMinPath;    // 별 기준(Par): 최소 배치 수로 푸는 해 가운데 가장 짧은 광선 경로 길이(전진 칸 수, 모든 갈래 합)
         public string[] hints;       // 선택: 화면 위 안내 문구. 조작 0번일 때 [0], 1번일 때 [1] … 마지막 문구는 계속 보인다
     }
 

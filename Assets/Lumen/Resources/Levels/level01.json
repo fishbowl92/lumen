@@ -11,6 +11,6 @@
   "pedestals": [{ "x": 1, "y": 0, "z": 1 }, { "x": 2, "y": 0, "z": 1 }],
   "inventory": { "plane": 1, "lift": 0, "splitter": 0 },
   "solverMinPlacements": 1,
-  "solverMinActions": 1,
+  "solverMinPath": 2,
   "hints": ["Click a blue tile to place a mirror.", "Click the mirror to rotate it. Light up the red crystal!"]
 }

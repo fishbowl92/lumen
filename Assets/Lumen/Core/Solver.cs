@@ -24,16 +24,13 @@ namespace Lumen.Core
     /// <summary>해 하나: 모든 크리스털을 켜고, 놓은 거울이 모두 광선을 꺾거나 나누는 배치.</summary>
     public sealed class Solution
     {
-        public Solution(List<Placement> placements, int floorChanges)
+        public Solution(List<Placement> placements, int floorChanges, int pathLength)
         {
             placements.Sort((a, b) => string.CompareOrdinal(a.ToString(), b.ToString()));
             Placements = placements;
             FloorChanges = floorChanges;
+            PathLength = pathLength;
             Key = string.Join(" | ", placements);
-            foreach (var placement in placements)
-            {
-                Actions += 1 + PieceRules.RotationsTo(placement.Type, placement.State);
-            }
         }
 
         public IReadOnlyList<Placement> Placements { get; }
@@ -44,8 +41,8 @@ namespace Lumen.Core
         /// <summary>이 해에서 광선이 위·아래로 움직인 직선 구간 수. 3D 체감 지표.</summary>
         public int FloorChanges { get; }
 
-        /// <summary>빈 판에서 이 해를 만드는 최소 조작 수: 거울마다 배치 1회 + 목표 상태까지의 회전 수.</summary>
-        public int Actions { get; }
+        /// <summary>이 해에서 광선이 전진한 칸 수(모든 갈래 합). 별 점수의 경로 길이와 같은 값.</summary>
+        public int PathLength { get; }
 
         public string Key { get; }
 
@@ -63,7 +60,10 @@ namespace Lumen.Core
             bool hitNodeLimit,
             bool anyTruncated)
         {
-            solutions.Sort((a, b) => a.Count != b.Count ? a.Count.CompareTo(b.Count) : string.CompareOrdinal(a.Key, b.Key));
+            solutions.Sort((a, b) =>
+                a.Count != b.Count ? a.Count.CompareTo(b.Count) :
+                a.PathLength != b.PathLength ? a.PathLength.CompareTo(b.PathLength) :
+                string.CompareOrdinal(a.Key, b.Key));
             Solutions = solutions;
             NearMisses = nearMisses;
             SearchSpace = searchSpace;
@@ -72,23 +72,30 @@ namespace Lumen.Core
             AnyTruncated = anyTruncated;
 
             MinPlacements = solutions.Count > 0 ? solutions[0].Count : -1;
-            MinActions = -1;
+            ParPath = -1;
             foreach (var solution in solutions)
             {
-                if (MinActions < 0 || solution.Actions < MinActions)
-                {
-                    MinActions = solution.Actions;
-                }
-
                 if (solution.Count == MinPlacements)
                 {
                     MinSolutionCount++;
                     FloorChanges = Math.Max(FloorChanges, solution.FloorChanges);
+                    if (ParPath < 0 || solution.PathLength < ParPath)
+                    {
+                        ParPath = solution.PathLength;
+                    }
+                }
+            }
+
+            foreach (var solution in solutions)
+            {
+                if (solution.Count == MinPlacements && solution.PathLength == ParPath)
+                {
+                    ParSolutionCount++;
                 }
             }
         }
 
-        /// <summary>해 목록. 배치 수가 적은 순.</summary>
+        /// <summary>해 목록. 배치 수가 적은 순, 같으면 경로가 짧은 순.</summary>
         public IReadOnlyList<Solution> Solutions { get; }
 
         public bool Solvable => Solutions.Count > 0;
@@ -96,8 +103,17 @@ namespace Lumen.Core
         /// <summary>최소 배치 수. 풀 수 없으면 -1. 레벨 JSON의 solverMinPlacements와 같아야 한다.</summary>
         public int MinPlacements { get; }
 
-        /// <summary>모든 해 가운데 가장 적은 조작 수(Par). 레벨 JSON의 solverMinActions와 같아야 한다. 풀 수 없으면 -1.</summary>
-        public int MinActions { get; }
+        /// <summary>
+        /// Par: 최소 배치 수로 푸는 해 가운데 가장 짧은 경로 길이. 레벨 JSON의 solverMinPath와 같아야 한다.
+        /// 풀 수 없으면 -1.
+        /// </summary>
+        public int ParPath { get; }
+
+        /// <summary>
+        /// 별 3개 해(최소 배치 수 + Par 경로)의 개수. 레벨 규칙(11/16): 정확히 1개여야 한다.
+        /// 가장 짧은 답이 하나로 정해지면, 나머지 해가 많은 것은 실패의 자유로 본다.
+        /// </summary>
+        public int ParSolutionCount { get; }
 
         /// <summary>해의 개수(11/13 결정: 유효 배치로만 이뤄진 서로 다른 배치의 수).</summary>
         public int SolutionCount => Solutions.Count;
@@ -233,7 +249,7 @@ namespace Lumen.Core
             var text = new StringBuilder();
             text.Append($"{definition.Id}: ");
             text.Append(result.Solvable
-                ? $"min {result.MinPlacements} (json {definition.SolverMinPlacements}), par {result.MinActions} (json {definition.SolverMinActions}), solutions {result.SolutionCount}"
+                ? $"min {result.MinPlacements} (json {definition.SolverMinPlacements}), par path {result.ParPath} (json {definition.SolverMinPath}), 3-star solutions {result.ParSolutionCount}, solutions {result.SolutionCount}"
                 : "UNSOLVABLE");
             text.Append($", floor changes {result.FloorChanges}, near misses {result.NearMisses}");
             text.Append($", search space {result.SearchSpace}, nodes {result.Nodes}");
@@ -244,7 +260,7 @@ namespace Lumen.Core
 
             for (var i = 0; i < result.Solutions.Count && i < maxSolutions; i++)
             {
-                text.Append($"\n  [{result.Solutions[i].Count}] {result.Solutions[i]}");
+                text.Append($"\n  [{result.Solutions[i].Count}, path {result.Solutions[i].PathLength}] {result.Solutions[i]}");
             }
 
             if (result.Solutions.Count > maxSolutions)
@@ -386,7 +402,7 @@ namespace Lumen.Core
                         }
                     }
 
-                    Solutions.Add(new Solution(new List<Placement>(_placed), floorChanges));
+                    Solutions.Add(new Solution(new List<Placement>(_placed), floorChanges, trace.Steps));
                     return;
                 }
 

@@ -23,6 +23,7 @@ namespace Lumen.Game
         private static readonly Color FixedMirrorActiveColor = new Color(0.86f, 0.74f, 1.00f); // 빛을 꺾는 중: 밝은 보라
         private static readonly Color SplitterColor = new Color(0.55f, 0.90f, 0.75f);
         private static readonly Color BeamColor = new Color(1.00f, 0.95f, 0.55f);
+        private static readonly Color GlowColor = new Color(1.00f, 1.00f, 0.92f);
 
         private const float BeamThickness = 0.08f;
         private const string BaseMaterialPath = "Materials/LumenBase";
@@ -36,11 +37,22 @@ namespace Lumen.Game
         private Transform _staticRoot;
         private Transform _dynamicRoot;
 
-        // 클리어 연출: 크리스털이 돌며 커졌다 작아지고, 빛 알갱이가 튀고, 광선이 한 번 굵어진다.
-        private const float EffectDuration = 1.2f;
+        // 클리어 연출(11/16 변경): 빛이 광원에서부터 경로를 따라 순서대로 밝게 지나가고,
+        // 크리스털에 닿는 순간 그 크리스털이 돌며 반짝이고 빛 알갱이가 튄다.
+        // 빛은 일정한 속도로 지나가므로 경로가 길면 연출도 길어진다(짧은 경로가 정답이라는 것을 몸으로 느끼게).
+        private const float GlowSpeed = 12f;        // 초당 칸 수
+        private const float MaxTravelTime = 2.6f;   // 아주 긴 경로도 이 시간 안에 끝난다
+        private const float CrystalPulseTime = 0.8f;
+        private const float GlowThickness = 0.16f;
         private readonly List<Transform> _beams = new List<Transform>();
+        private readonly List<BeamInfo> _beamInfos = new List<BeamInfo>();
+        private readonly List<Transform> _glows = new List<Transform>();
+        private readonly Dictionary<Int3, float> _crystalArrival = new Dictionary<Int3, float>();
+        private readonly HashSet<Int3> _burst = new HashSet<Int3>();
         private readonly List<(Transform T, Vector3 Velocity)> _sparks = new List<(Transform, Vector3)>();
         private float _effectTime = -1f;
+        private float _glowSpeed = GlowSpeed;
+        private float _effectDuration;
         private int _floorCount = 1;
 
         public BoardView(Transform parent)
@@ -60,6 +72,9 @@ namespace Lumen.Game
                 Object.Destroy(probe);
             }
         }
+
+        /// <summary>클리어 연출 전체 길이(초). PlayClearEffect 뒤에 정해진다. 결과 창은 이 시간이 지난 뒤 뜬다.</summary>
+        public float ClearEffectLength => _effectDuration;
 
         /// <summary>-1이면 모든 층, 0 이상이면 그 층만 보인다.</summary>
         public int VisibleFloor { get; private set; } = -1;
@@ -162,6 +177,9 @@ namespace Lumen.Game
 
             _dynamicRoot = NewChild("Dynamic");
             _beams.Clear();
+            _beamInfos.Clear();
+            _glows.Clear();
+            _crystalArrival.Clear();
             StopEffect();
             var size = session.Definition.Size;
 
@@ -180,9 +198,24 @@ namespace Lumen.Game
                 }
             }
 
+            // 각 구간이 광원에서 몇 칸 떨어져 시작하는지 센다. 꺾이거나 나뉜 칸의 거리를 기억해 두고,
+            // 그 칸에서 시작하는 다음 구간(분할기의 꺾인 갈래 포함)이 이어받는다. 광원에서 시작하면 0.
+            var distanceAt = new Dictionary<Int3, float>();
             foreach (var segment in session.LastTrace.Segments)
             {
-                DrawBeam(segment);
+                distanceAt.TryGetValue(segment.From, out var start);
+                var end = start + CellDistance(segment.From, segment.To);
+                if (!distanceAt.ContainsKey(segment.To))
+                {
+                    distanceAt[segment.To] = end;
+                }
+
+                if (segment.End == SegmentEnd.Absorbed && !_crystalArrival.ContainsKey(segment.To))
+                {
+                    _crystalArrival[segment.To] = end;
+                }
+
+                DrawBeam(segment, start, end);
             }
 
             foreach (var pair in _crystals)
@@ -193,6 +226,31 @@ namespace Lumen.Game
             }
 
             ApplyFloorVisibility();
+        }
+
+        /// <summary>메인 메뉴로 돌아갈 때 판을 모두 지운다.</summary>
+        public void Clear()
+        {
+            StopEffect();
+            if (_staticRoot != null)
+            {
+                Object.Destroy(_staticRoot.gameObject);
+                _staticRoot = null;
+            }
+
+            if (_dynamicRoot != null)
+            {
+                Object.Destroy(_dynamicRoot.gameObject);
+                _dynamicRoot = null;
+            }
+
+            _floorObjects.Clear();
+            _crystals.Clear();
+            _beams.Clear();
+            _beamInfos.Clear();
+            _glows.Clear();
+            _crystalArrival.Clear();
+            VisibleFloor = -1;
         }
 
         /// <summary>층 보기: 전체 → 1층 → 2층 … → 전체.</summary>
@@ -243,7 +301,10 @@ namespace Lumen.Game
             }
         }
 
-        private void DrawBeam(BeamSegment segment)
+        private static float CellDistance(Int3 a, Int3 b) =>
+            Mathf.Abs(a.X - b.X) + Mathf.Abs(a.Y - b.Y) + Mathf.Abs(a.Z - b.Z);
+
+        private void DrawBeam(BeamSegment segment, float startDistance, float endDistance)
         {
             var direction = ToVector(segment.Direction);
             var start = ToWorld(segment.From);
@@ -260,28 +321,45 @@ namespace Lumen.Game
             }
 
             var up = segment.Direction.IsVertical() ? Vector3.forward : Vector3.up;
+            var rotation = Quaternion.LookRotation(direction, up);
             var beam = Box(_dynamicRoot, "Beam", (start + end) * 0.5f, new Vector3(BeamThickness, BeamThickness, length),
-                Quaternion.LookRotation(direction, up), BeamColor, false);
+                rotation, BeamColor, false);
             _beams.Add(beam.transform);
+            _beamInfos.Add(new BeamInfo(start, direction, length, rotation, startDistance, endDistance));
             // 광선은 층을 가로지르므로 층 보기와 상관없이 항상 보인다.
         }
 
-        /// <summary>클리어 연출을 시작한다. 이후 Tick이 1.2초 동안 움직인다.</summary>
+        /// <summary>
+        /// 클리어 연출을 시작한다. 빛이 광원부터 경로를 따라 밝게 지나가고(경로가 길수록 오래),
+        /// 크리스털에 닿을 때마다 그 크리스털이 반짝인다. 이후 Tick이 움직인다.
+        /// </summary>
         public void PlayClearEffect()
         {
             StopEffect();
-            _effectTime = 0f;
-            foreach (var pair in _crystals)
+            _burst.Clear();
+            var longest = 0f;
+            foreach (var info in _beamInfos)
             {
-                var center = pair.Value.transform.localPosition;
-                for (var i = 0; i < 18; i++)
-                {
-                    var spark = Box(_dynamicRoot, "Spark", center, Vector3.one * 0.09f, Random.rotation,
-                        i % 3 == 0 ? BeamColor : CrystalOnColor, false);
-                    var velocity = Random.onUnitSphere * Random.Range(1.6f, 3.2f) + Vector3.up * 1.2f;
-                    _sparks.Add((spark.transform, velocity));
-                }
+                longest = Mathf.Max(longest, info.EndDistance);
             }
+
+            // 보통은 일정한 속도. 아주 긴 경로만 상한 시간에 맞춰 빨라진다.
+            _glowSpeed = Mathf.Max(GlowSpeed, longest / MaxTravelTime);
+            var lastArrival = 0f;
+            foreach (var arrival in _crystalArrival.Values)
+            {
+                lastArrival = Mathf.Max(lastArrival, arrival);
+            }
+
+            _effectDuration = Mathf.Max(longest, lastArrival) / _glowSpeed + CrystalPulseTime;
+
+            foreach (var info in _beamInfos)
+            {
+                var glow = Box(_dynamicRoot, "Glow", info.Start, Vector3.zero, info.Rotation, GlowColor, false);
+                _glows.Add(glow.transform);
+            }
+
+            _effectTime = 0f;
         }
 
         /// <summary>매 프레임 호출. 연출 중이 아니면 아무것도 하지 않는다.</summary>
@@ -293,26 +371,43 @@ namespace Lumen.Game
             }
 
             _effectTime += deltaTime;
-            var t = Mathf.Clamp01(_effectTime / EffectDuration);
+            var front = _effectTime * _glowSpeed; // 빛의 앞머리가 광원에서 몇 칸 왔는지
 
-            // 크리스털: 한 바퀴 돌며 크게 튀었다가 점등 크기로 돌아온다
-            var pulse = 1f + 0.45f * Mathf.Sin(t * Mathf.PI) * (1f - t);
-            foreach (var pair in _crystals)
+            // 지나간 만큼 밝은 광선을 겹쳐 그린다(분할기의 갈래들은 동시에 나아간다).
+            for (var i = 0; i < _beamInfos.Count && i < _glows.Count; i++)
             {
-                var crystal = pair.Value.transform;
-                crystal.localRotation = Quaternion.Euler(45f, 45f + t * 360f, 45f);
-                crystal.localScale = Vector3.one * 0.52f * pulse;
+                var info = _beamInfos[i];
+                var glow = _glows[i];
+                if (glow == null)
+                {
+                    continue;
+                }
+
+                var span = Mathf.Max(0.0001f, info.EndDistance - info.StartDistance);
+                var p = Mathf.Clamp01((front - info.StartDistance) / span);
+                var shown = info.Length * p;
+                glow.localPosition = info.Start + info.Direction * (shown * 0.5f);
+                glow.localScale = shown > 0.001f ? new Vector3(GlowThickness, GlowThickness, shown) : Vector3.zero;
             }
 
-            // 광선: 처음 0.4초 동안 한 번 굵어졌다 돌아온다
-            var flash = 1f + 1.5f * Mathf.Sin(Mathf.Clamp01(_effectTime / 0.4f) * Mathf.PI);
-            foreach (var beam in _beams)
+            // 크리스털: 빛이 닿은 순간부터 한 바퀴 돌며 크게 튀었다가 점등 크기로 돌아온다
+            foreach (var pair in _crystals)
             {
-                if (beam != null)
+                if (!_crystalArrival.TryGetValue(pair.Key, out var arrival) || front < arrival)
                 {
-                    var scale = beam.localScale;
-                    beam.localScale = new Vector3(BeamThickness * flash, BeamThickness * flash, scale.z);
+                    continue;
                 }
+
+                var crystal = pair.Value.transform;
+                if (_burst.Add(pair.Key))
+                {
+                    SpawnSparks(crystal.localPosition);
+                }
+
+                var t = Mathf.Clamp01((_effectTime - arrival / _glowSpeed) / CrystalPulseTime);
+                var pulse = 1f + 0.45f * Mathf.Sin(t * Mathf.PI) * (1f - t);
+                crystal.localRotation = Quaternion.Euler(45f, 45f + t * 360f, 45f);
+                crystal.localScale = Vector3.one * 0.52f * pulse;
             }
 
             // 빛 알갱이: 퍼지며 떨어지고 작아진다
@@ -326,13 +421,24 @@ namespace Lumen.Game
 
                 velocity += Vector3.down * (4f * deltaTime);
                 spark.localPosition += velocity * deltaTime;
-                spark.localScale = Vector3.one * (0.09f * (1f - t));
+                spark.localScale *= Mathf.Max(0f, 1f - deltaTime / CrystalPulseTime);
                 _sparks[i] = (spark, velocity);
             }
 
-            if (_effectTime >= EffectDuration)
+            if (_effectTime >= _effectDuration)
             {
-                StopEffect();
+                StopEffect(); // 밝은 광선은 그대로 남겨, 결과 창 뒤에서 지나온 경로가 보이게 한다
+            }
+        }
+
+        private void SpawnSparks(Vector3 center)
+        {
+            for (var i = 0; i < 18; i++)
+            {
+                var spark = Box(_dynamicRoot, "Spark", center, Vector3.one * 0.09f, Random.rotation,
+                    i % 3 == 0 ? BeamColor : CrystalOnColor, false);
+                var velocity = Random.onUnitSphere * Random.Range(1.6f, 3.2f) + Vector3.up * 1.2f;
+                _sparks.Add((spark.transform, velocity));
             }
         }
 
@@ -409,6 +515,28 @@ namespace Lumen.Game
                 {
                     entry.Go.SetActive(VisibleFloor < 0 || entry.Floor == VisibleFloor);
                 }
+            }
+        }
+
+        /// <summary>그려진 광선 구간 하나: 화면 위치와 광원에서의 거리(칸).</summary>
+        private readonly struct BeamInfo
+        {
+            public readonly Vector3 Start;
+            public readonly Vector3 Direction;
+            public readonly float Length;
+            public readonly Quaternion Rotation;
+            public readonly float StartDistance;
+            public readonly float EndDistance;
+
+            public BeamInfo(Vector3 start, Vector3 direction, float length, Quaternion rotation, float startDistance,
+                float endDistance)
+            {
+                Start = start;
+                Direction = direction;
+                Length = length;
+                Rotation = rotation;
+                StartDistance = startDistance;
+                EndDistance = endDistance;
             }
         }
     }

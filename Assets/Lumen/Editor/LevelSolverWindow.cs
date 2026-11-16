@@ -105,10 +105,10 @@ namespace Lumen.EditorTools
                 if (r.MinPlacements == 0) row.Warnings.Add("Solvable without placing any mirror.");
                 if (r.MinPlacements != d.SolverMinPlacements)
                     row.Warnings.Add($"solverMinPlacements in JSON is {d.SolverMinPlacements}, solver says {r.MinPlacements}.");
-                if (r.MinActions != d.SolverMinActions)
-                    row.Warnings.Add($"solverMinActions (par) in JSON is {d.SolverMinActions}, solver says {r.MinActions}.");
-                if (LevelNumber(d.Id) >= 8 && r.SolutionCount > 3)
-                    row.Warnings.Add($"Level 8+ must have 3 solutions or fewer (has {r.SolutionCount}).");
+                if (r.ParPath != d.SolverMinPath)
+                    row.Warnings.Add($"solverMinPath (par) in JSON is {d.SolverMinPath}, solver says {r.ParPath}.");
+                if (r.ParSolutionCount != 1)
+                    row.Warnings.Add($"Exactly one 3-star solution is required (has {r.ParSolutionCount}).");
             }
 
             if (r.AnyTruncated) row.Warnings.Add("Some placements hit the beam step limit (looping beams).");
@@ -157,7 +157,7 @@ namespace Lumen.EditorTools
                     Cell(d.Pedestals.Count.ToString(), 3);
                     Cell($"{d.InventoryOf(PieceType.PlaneMirror)} / {d.InventoryOf(PieceType.LiftMirror)} / {d.InventoryOf(PieceType.Splitter)}", 4);
                     Cell($"{d.SolverMinPlacements} / {r.MinPlacements}", 5);
-                    Cell($"{d.SolverMinActions} / {r.MinActions}", 6);
+                    Cell($"{d.SolverMinPath} / {r.ParPath}", 6);
                     Cell($"{r.SolutionCount} ({r.MinSolutionCount} min)", 7);
                     Cell(r.FloorChanges.ToString(), 8);
                     Cell(r.NearMisses.ToString(), 9);
@@ -179,7 +179,7 @@ namespace Lumen.EditorTools
                 var solutions = row.Result.Solutions;
                 for (var i = 0; i < solutions.Count && i < MaxShownSolutions; i++)
                 {
-                    EditorGUILayout.LabelField($"[{solutions[i].Count}] moves {solutions[i].Actions} floors {solutions[i].FloorChanges}", solutions[i].ToString());
+                    EditorGUILayout.LabelField($"[{solutions[i].Count}] path {solutions[i].PathLength} floors {solutions[i].FloorChanges}", solutions[i].ToString());
                 }
 
                 if (solutions.Count > MaxShownSolutions)
@@ -206,17 +206,6 @@ namespace Lumen.EditorTools
             }
 
             return text.ToString();
-        }
-
-        private static int LevelNumber(string id)
-        {
-            var digits = new StringBuilder();
-            foreach (var c in id)
-            {
-                if (char.IsDigit(c)) digits.Append(c);
-            }
-
-            return digits.Length > 0 ? int.Parse(digits.ToString()) : 0;
         }
 
         private sealed class Row

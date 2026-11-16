@@ -51,11 +51,17 @@ namespace Lumen.Core
 
         /// <summary>
         /// 이번 시도의 조작 수. 배치·회전·회수·되돌리기가 하나씩 늘리고, 리셋하면 0이 된다.
+        /// 안내 문구를 고르는 데만 쓴다. 별에는 쓰지 않는다(11/16 변경: 실패와 시도는 감점하지 않는다).
         /// </summary>
         public int MoveCount { get; private set; }
 
-        /// <summary>클리어 전에는 0, 클리어 뒤에는 1~3. 기준은 조작 수(11/13 변경).</summary>
-        public int Stars => IsCleared ? ScoreStars(MoveCount, Definition.SolverMinActions) : 0;
+        /// <summary>지금 광선이 전진한 칸 수(모든 갈래 합). 클리어했을 때의 값이 별 계산에 쓰인다.</summary>
+        public int PathLength => LastTrace.Steps;
+
+        /// <summary>클리어 전에는 0, 클리어 뒤에는 1~3. 기준은 거울 수와 광선 경로 길이(11/16 변경).</summary>
+        public int Stars => IsCleared
+            ? ScoreStars(EffectivePlacedCount, Definition.SolverMinPlacements, PathLength, Definition.SolverMinPath)
+            : 0;
 
         public bool CanUndo => !IsCleared && _history.Count > 0;
 
@@ -64,18 +70,21 @@ namespace Lumen.Core
         public bool IsPlayerPiece(Int3 position) => _placed.Contains(position);
 
         /// <summary>
-        /// 별 규칙(11/13 변경): 조작 수가 Par 이하면 3개, Par×2+2 이하면 2개, 그보다 많으면 1개.
-        /// 해가 1개뿐인 레벨이 많아 "빛을 꺾은 거울 수"로는 별이 항상 3개가 되어 조작 수로 바꿨다.
-        /// 별 3개는 최소 조작으로 풀었을 때만 준다(Par+2까지 주던 것을 플레이 확인 뒤 좁힘).
+        /// 별 규칙(11/16 변경):
+        /// 1. 광선을 꺾거나 나눈 거울 수가 최소 배치 수보다 많으면 별 1개(경로가 짧아도 "어시스트"를 더 받은 것).
+        /// 2. 아니면 경로 길이가 Par(최소 배치 해 중 가장 짧은 경로) 이하일 때 별 3개.
+        /// 3. 그 밖은 별 2개(같은 거울 수로 더 돌아간 경로).
+        /// 거울 종류는 상관없다. 광선이 닿지 않거나 꺾지 않은 거울은 세지 않아, 시도하다 남긴 거울이 감점되지 않는다.
+        /// 조작 수(놓기·돌리기·되돌리기·리셋)는 세지 않는다.
         /// </summary>
-        public static int ScoreStars(int moves, int par)
+        public static int ScoreStars(int effectiveMirrors, int minMirrors, int pathLength, int parPath)
         {
-            if (moves <= par)
+            if (effectiveMirrors > minMirrors)
             {
-                return 3;
+                return 1;
             }
 
-            return moves <= par * 2 + 2 ? 2 : 1;
+            return pathLength <= parPath ? 3 : 2;
         }
 
         public bool CanPlace(Int3 position, PieceType type) =>

@@ -160,21 +160,59 @@ namespace Lumen.Core.Tests
             Assert.IsTrue(session.IsCleared);
             Assert.AreEqual(2, session.PlacedCount);
             Assert.AreEqual(1, session.EffectivePlacedCount);
-            Assert.AreEqual(2, session.Stars, "별은 조작 수로 센다: 2번 조작, Par 1 → 별 2개");
+            Assert.AreEqual(3, session.Stars, "광선이 닿지 않는 거울은 세지 않는다: 유효 거울 1개, 경로 5 = Par → 별 3개");
         }
 
-        // 별 규칙(11/13 변경): 조작 수 ≤ Par → 3, ≤ Par×2+2 → 2, 그 밖 → 1
-        [TestCase(1, 1, 3)]
-        [TestCase(2, 1, 2)]
-        [TestCase(4, 1, 2)]
-        [TestCase(5, 1, 1)]
-        [TestCase(4, 4, 3)]
-        [TestCase(5, 4, 2)]
-        [TestCase(10, 4, 2)]
-        [TestCase(11, 4, 1)]
-        public void T19_StarRule(int moves, int par, int expectedStars)
+        // 별 규칙(11/16 변경): 유효 거울 수 > 최소 배치 수 → 1, 아니면 경로 ≤ Par → 3, 그 밖 → 2
+        [TestCase(3, 3, 6, 6, 3)]   // 최소 거울, 최단 경로
+        [TestCase(3, 3, 10, 6, 2)]  // 최소 거울, 돌아간 경로
+        [TestCase(4, 3, 5, 6, 1)]   // 거울을 더 써서 경로가 짧아져도 "어시스트" → 1
+        [TestCase(4, 3, 12, 6, 1)]
+        [TestCase(1, 1, 5, 5, 3)]
+        public void T19_StarRule(int mirrors, int minMirrors, int path, int par, int expectedStars)
         {
-            Assert.AreEqual(expectedStars, LevelSession.ScoreStars(moves, par));
+            Assert.AreEqual(expectedStars, LevelSession.ScoreStars(mirrors, minMirrors, path, par));
+        }
+
+        [Test]
+        public void T19_TwoRoutesGiveThreeAndTwoStars()
+        {
+            var shortRoute = new LevelSession(LevelDefinition.FromData(TestLevels.Level06Data()));
+            Assert.IsTrue(shortRoute.TryPlace(new Int3(3, 0, 4), PieceType.LiftMirror));
+            Assert.IsTrue(shortRoute.TryPlace(new Int3(3, 1, 2), PieceType.PlaneMirror));
+            Assert.IsTrue(shortRoute.TryPlace(new Int3(4, 1, 2), PieceType.LiftMirror));
+            SetState(shortRoute, new Int3(3, 0, 4), PieceState.XFall);
+            SetState(shortRoute, new Int3(3, 1, 2), PieceState.Backslash);
+            SetState(shortRoute, new Int3(4, 1, 2), PieceState.XFall);
+            Assert.IsTrue(shortRoute.IsCleared);
+            Assert.AreEqual(6, shortRoute.PathLength);
+            Assert.AreEqual(3, shortRoute.Stars);
+
+            var longRoute = new LevelSession(LevelDefinition.FromData(TestLevels.Level06Data()));
+            Assert.IsTrue(longRoute.TryPlace(new Int3(1, 0, 4), PieceType.LiftMirror));
+            Assert.IsTrue(longRoute.TryPlace(new Int3(1, 1, 2), PieceType.PlaneMirror));
+            Assert.IsTrue(longRoute.TryPlace(new Int3(4, 1, 2), PieceType.LiftMirror));
+            SetState(longRoute, new Int3(1, 0, 4), PieceState.XFall);
+            SetState(longRoute, new Int3(1, 1, 2), PieceState.Backslash);
+            SetState(longRoute, new Int3(4, 1, 2), PieceState.XFall);
+            Assert.IsTrue(longRoute.IsCleared);
+            Assert.AreEqual(10, longRoute.PathLength);
+            Assert.AreEqual(2, longRoute.Stars);
+        }
+
+        /// <summary>클리어 전까지 거울을 돌려 원하는 상태로 맞춘다(클리어되면 입력이 잠긴다).</summary>
+        private static void SetState(LevelSession session, Int3 position, PieceState target)
+        {
+            for (var i = 0; i < 4 && !session.IsCleared; i++)
+            {
+                session.Grid.TryGetPiece(position, out var piece);
+                if (piece.State == target)
+                {
+                    return;
+                }
+
+                session.TryRotate(position);
+            }
         }
 
         [Test]
@@ -192,12 +230,12 @@ namespace Lumen.Core.Tests
             Assert.IsTrue(session.TryPlace(Pedestal1, PieceType.LiftMirror));    // 5, 클리어
             Assert.IsTrue(session.IsCleared);
             Assert.AreEqual(5, session.MoveCount);
-            Assert.AreEqual(1, session.Stars, "Par 1, 조작 5 → 별 1개");
+            Assert.AreEqual(3, session.Stars, "조작 수는 별에 영향이 없다(11/16): 여러 번 시도해도 최단 경로면 별 3개");
 
             session.Reset();
             Assert.AreEqual(0, session.MoveCount);
             Assert.IsTrue(session.TryPlace(Pedestal1, PieceType.LiftMirror));
-            Assert.AreEqual(3, session.Stars, "다시 시작해 한 번에 풀면 별 3개");
+            Assert.AreEqual(3, session.Stars);
         }
 
         private static Direction Rotate(Direction d)

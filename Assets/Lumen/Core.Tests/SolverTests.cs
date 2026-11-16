@@ -127,7 +127,7 @@ namespace Lumen.Core.Tests
         }
 
         [Test]
-        public void T29_ParCountsPlacementsAndRotations()
+        public void T29_ParIsShortestPathOfMinimalSolutions()
         {
             Assert.AreEqual(0, PieceRules.RotationsTo(PieceType.PlaneMirror, PieceState.Slash));
             Assert.AreEqual(1, PieceRules.RotationsTo(PieceType.PlaneMirror, PieceState.Backslash));
@@ -136,14 +136,14 @@ namespace Lumen.Core.Tests
             Assert.AreEqual(2, PieceRules.RotationsTo(PieceType.LiftMirror, PieceState.XFall));
             Assert.AreEqual(3, PieceRules.RotationsTo(PieceType.LiftMirror, PieceState.ZFall));
 
-            Assert.AreEqual(1, Solve(TestLevels.Level05Data()).MinActions); // 승강 XRise: 배치 1
+            Assert.AreEqual(5, Solve(TestLevels.Level05Data()).ParPath); // 동쪽 2칸 → 위 1칸 → 서쪽 2칸
 
             // 1레벨을 ''로만 풀리게 바꾸면: 광원 (0,0,1) 동쪽 → (1,0,1) '' → 남쪽 (1,0,0)
             var data = TestLevels.Level01Data();
             data.crystals = new[] { C(1, 0) };
             var r = Solve(data);
             Assert.AreEqual("(1, 0, 1) Plane \\", r.Solutions[0].Key);
-            Assert.AreEqual(2, r.MinActions); // 배치 1 + 회전 1
+            Assert.AreEqual(2, r.ParPath); // 동쪽 1칸 → 남쪽 1칸
         }
 
         [Test]
