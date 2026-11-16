@@ -49,6 +49,9 @@ namespace Lumen.Game
         private readonly List<Transform> _glows = new List<Transform>();
         private readonly Dictionary<Int3, float> _crystalArrival = new Dictionary<Int3, float>();
         private readonly HashSet<Int3> _burst = new HashSet<Int3>();
+        // 클리어하면 벽과 받침대가 작아지며 사라져, 가려졌던 경로가 다 보이게 한다(11/16).
+        private const float VanishTime = 0.35f;
+        private readonly List<(Transform T, Vector3 Scale)> _vanishers = new List<(Transform, Vector3)>();
         private readonly List<(Transform T, Vector3 Velocity)> _sparks = new List<(Transform, Vector3)>();
         private float _effectTime = -1f;
         private float _glowSpeed = GlowSpeed;
@@ -102,6 +105,7 @@ namespace Lumen.Game
 
             _floorObjects.Clear();
             _crystals.Clear();
+            _vanishers.Clear();
             StopEffect();
             _staticRoot = NewChild("Static");
             _dynamicRoot = null;
@@ -124,6 +128,7 @@ namespace Lumen.Game
                                 new Vector3(0.9f, 0.1f, 0.9f), Quaternion.identity, PedestalColor, true);
                             tile.AddComponent<CellTag>().Set(cell);
                             Register(tile, y);
+                            _vanishers.Add((tile.transform, tile.transform.localScale));
                         }
                         else if (y == 0)
                         {
@@ -142,8 +147,9 @@ namespace Lumen.Game
 
             foreach (var wall in definition.Walls)
             {
-                Register(Box(_staticRoot, "Wall", ToWorld(wall), Vector3.one * 0.95f, Quaternion.identity, WallColor, false),
-                    wall.Y);
+                var wallGo = Box(_staticRoot, "Wall", ToWorld(wall), Vector3.one * 0.95f, Quaternion.identity, WallColor, false);
+                Register(wallGo, wall.Y);
+                _vanishers.Add((wallGo.transform, wallGo.transform.localScale));
             }
 
             foreach (var source in definition.Sources)
@@ -176,6 +182,11 @@ namespace Lumen.Game
             }
 
             _dynamicRoot = NewChild("Dynamic");
+            if (!session.IsCleared)
+            {
+                RestoreVanishers(); // 다시 하기·리셋이면 벽과 받침대를 원래 크기로
+            }
+
             _beams.Clear();
             _beamInfos.Clear();
             _glows.Clear();
@@ -246,6 +257,7 @@ namespace Lumen.Game
 
             _floorObjects.Clear();
             _crystals.Clear();
+            _vanishers.Clear();
             _beams.Clear();
             _beamInfos.Clear();
             _glows.Clear();
@@ -377,6 +389,17 @@ namespace Lumen.Game
             _effectTime += deltaTime;
             var front = _effectTime * _glowSpeed; // 빛의 앞머리가 광원에서 몇 칸 왔는지
 
+            // 벽과 받침대: 연출 시작과 함께 작아지며 사라진다
+            var v = Mathf.Clamp01(_effectTime / VanishTime);
+            var shrink = 1f - v * v * (3f - 2f * v);
+            foreach (var (t, scale) in _vanishers)
+            {
+                if (t != null)
+                {
+                    t.localScale = scale * shrink;
+                }
+            }
+
             // 지나간 만큼 밝은 광선을 겹쳐 그린다(분할기의 갈래들은 동시에 나아간다).
             for (var i = 0; i < _beamInfos.Count && i < _glows.Count; i++)
             {
@@ -432,6 +455,17 @@ namespace Lumen.Game
             if (_effectTime >= _effectDuration)
             {
                 StopEffect(); // 밝은 광선은 그대로 남겨, 결과 창 뒤에서 지나온 경로가 보이게 한다
+            }
+        }
+
+        private void RestoreVanishers()
+        {
+            foreach (var (t, scale) in _vanishers)
+            {
+                if (t != null)
+                {
+                    t.localScale = scale;
+                }
             }
         }
 
