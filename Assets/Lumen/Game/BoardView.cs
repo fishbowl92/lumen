@@ -336,6 +336,10 @@ namespace Lumen.Game
         public void PlayClearEffect()
         {
             StopEffect();
+
+            // 층 보기 중이었어도 전체 층 보기로 돌아가 전체 경로와 크리스털이 보이게 한다.
+            VisibleFloor = -1;
+            ApplyFloorVisibility();
             _burst.Clear();
             var longest = 0f;
             foreach (var info in _beamInfos)
