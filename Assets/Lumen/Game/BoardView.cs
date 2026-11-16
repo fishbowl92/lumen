@@ -169,7 +169,7 @@ namespace Lumen.Game
                 var go = Box(_staticRoot, "Crystal", ToWorld(crystal), Vector3.one * 0.42f, Quaternion.Euler(45f, 0f, 45f),
                     CrystalOffColor, false);
                 _crystals[crystal] = go.GetComponent<Renderer>();
-                Register(go, crystal.Y);
+                // 크리스털은 목표라서 층 보기(Tab)로 다른 층을 볼 때도 숨기지 않는다(Register 하지 않음).
             }
 
             Refresh(session);
