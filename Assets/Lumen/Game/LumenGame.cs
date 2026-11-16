@@ -253,6 +253,7 @@ namespace Lumen.Game
         {
             _session.Reset();
             _rig.ResetView();
+            _board.ShowAllFloors(); // Tab으로 바꾼 층 보기도 처음(전체 층)으로
             Changed();
         }
 

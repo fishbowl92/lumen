@@ -138,8 +138,11 @@ namespace Lumen.Game
                         else
                         {
                             // 위층은 유리 바닥: 시야를 가리지 않도록 칸 중심 아래에 작은 표식만 둔다.
-                            Register(Box(_staticRoot, "FloorMarker", ToWorld(cell) + Vector3.down * 0.47f,
-                                new Vector3(0.18f, 0.03f, 0.18f), Quaternion.identity, FloorMarkerColor, false), y);
+                            // 클리어하면 벽·받침대와 함께 작아지며 사라진다.
+                            var marker = Box(_staticRoot, "FloorMarker", ToWorld(cell) + Vector3.down * 0.47f,
+                                new Vector3(0.18f, 0.03f, 0.18f), Quaternion.identity, FloorMarkerColor, false);
+                            Register(marker, y);
+                            _vanishers.Add((marker.transform, marker.transform.localScale));
                         }
                     }
                 }
@@ -263,6 +266,13 @@ namespace Lumen.Game
             _glows.Clear();
             _crystalArrival.Clear();
             VisibleFloor = -1;
+        }
+
+        /// <summary>층 보기를 처음 상태(전체 층)로 되돌린다. R 리셋에서 쓴다.</summary>
+        public void ShowAllFloors()
+        {
+            VisibleFloor = -1;
+            ApplyFloorVisibility();
         }
 
         /// <summary>층 보기: 전체 → 1층 → 2층 … → 전체.</summary>
