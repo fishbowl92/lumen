@@ -132,8 +132,11 @@ namespace Lumen.Game
                         }
                         else if (y == 0)
                         {
-                            Register(Box(_staticRoot, "Floor", ToWorld(cell) + Vector3.down * 0.47f,
-                                new Vector3(0.94f, 0.06f, 0.94f), Quaternion.identity, FloorColor, false), y);
+                            // 1층 바닥 타일도 클리어하면 벽·받침대와 함께 작아지며 사라진다.
+                            var floor = Box(_staticRoot, "Floor", ToWorld(cell) + Vector3.down * 0.47f,
+                                new Vector3(0.94f, 0.06f, 0.94f), Quaternion.identity, FloorColor, false);
+                            Register(floor, y);
+                            _vanishers.Add((floor.transform, floor.transform.localScale));
                         }
                         else
                         {
