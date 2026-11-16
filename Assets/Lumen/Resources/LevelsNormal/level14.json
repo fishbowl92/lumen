@@ -1,0 +1,15 @@
+{
+  "id": "normal14",
+  "name": "꺾고 나누기",
+  "sizeX": 5,
+  "sizeY": 2,
+  "sizeZ": 5,
+  "sources": [{ "x": 2, "y": 0, "z": 0, "dir": "North" }],
+  "crystals": [{ "x": 4, "y": 0, "z": 3 }, { "x": 3, "y": 1, "z": 4 }],
+  "walls": [{ "x": 4, "y": 1, "z": 1 }, { "x": 1, "y": 1, "z": 1 }, { "x": 3, "y": 0, "z": 2 }, { "x": 4, "y": 1, "z": 3 }],
+  "fixedPieces": [{ "x": 2, "y": 0, "z": 2, "type": "Lift", "state": "ZRise" }],
+  "pedestals": [{ "x": 0, "y": 0, "z": 3 }, { "x": 2, "y": 0, "z": 1 }, { "x": 0, "y": 0, "z": 1 }, { "x": 2, "y": 0, "z": 4 }, { "x": 3, "y": 0, "z": 1 }, { "x": 2, "y": 1, "z": 0 }, { "x": 0, "y": 1, "z": 0 }, { "x": 2, "y": 1, "z": 2 }, { "x": 3, "y": 1, "z": 3 }, { "x": 3, "y": 0, "z": 3 }, { "x": 3, "y": 1, "z": 2 }, { "x": 1, "y": 1, "z": 4 }, { "x": 3, "y": 0, "z": 4 }],
+  "inventory": { "plane": 7, "lift": 4, "splitter": 1 },
+  "solverMinPlacements": 5,
+  "solverMinPath": 11
+}

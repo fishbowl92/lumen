@@ -1,0 +1,15 @@
+{
+  "id": "normal07",
+  "name": "다시 유혹",
+  "sizeX": 5,
+  "sizeY": 1,
+  "sizeZ": 5,
+  "sources": [{ "x": 4, "y": 0, "z": 3, "dir": "West" }],
+  "crystals": [{ "x": 4, "y": 0, "z": 1 }],
+  "walls": [{ "x": 4, "y": 0, "z": 2 }, { "x": 2, "y": 0, "z": 2 }, { "x": 3, "y": 0, "z": 2 }],
+  "fixedPieces": [{ "x": 0, "y": 0, "z": 3, "type": "Plane", "state": "/" }, { "x": 3, "y": 0, "z": 0, "type": "Plane", "state": "/" }],
+  "pedestals": [{ "x": 1, "y": 0, "z": 0 }, { "x": 1, "y": 0, "z": 3 }, { "x": 0, "y": 0, "z": 0 }, { "x": 3, "y": 0, "z": 3 }, { "x": 1, "y": 0, "z": 1 }, { "x": 3, "y": 0, "z": 1 }],
+  "inventory": { "plane": 4, "lift": 0, "splitter": 0 },
+  "solverMinPlacements": 2,
+  "solverMinPath": 8
+}

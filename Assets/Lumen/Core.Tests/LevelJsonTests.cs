@@ -11,6 +11,10 @@ namespace Lumen.Core.Tests
     public class LevelJsonTests
     {
         private const string LevelFolder = "Assets/Lumen/Resources/Levels";
+        private const string NormalLevelFolder = "Assets/Lumen/Resources/LevelsNormal";
+
+        // 10×5×10 최종 레벨도 끝까지 탐색하도록 기본 상한(200만)보다 넉넉히 둔다.
+        private const int LevelTestNodeLimit = 10_000_000;
         private const string Level05Path = LevelFolder + "/level05.json";
 
         [Test]
@@ -39,14 +43,41 @@ namespace Lumen.Core.Tests
         [Test]
         public void T27_EveryLevelIsSolvableAndMatchesSolver()
         {
-            var files = System.IO.Directory.GetFiles(LevelFolder, "*.json");
+            CheckFolder(LevelFolder);
+        }
+
+        /// <summary>Normal Play 21레벨(Fast 11레벨 + 연습 레벨 10개)도 같은 규칙을 지키는지 확인한다.</summary>
+        [Test]
+        public void T27b_EveryNormalLevelIsSolvableAndMatchesSolver()
+        {
+            CheckFolder(NormalLevelFolder);
+        }
+
+        /// <summary>한 묶음 안에서 레벨 id가 겹치지 않는지 확인한다(별 기록이 id로 저장된다).</summary>
+        [Test]
+        public void T27c_LevelIdsAreUniqueInEachFolder()
+        {
+            foreach (var folder in new[] { LevelFolder, NormalLevelFolder })
+            {
+                var ids = new System.Collections.Generic.HashSet<string>();
+                foreach (var file in System.IO.Directory.GetFiles(folder, "*.json"))
+                {
+                    var id = JsonUtility.FromJson<LevelData>(System.IO.File.ReadAllText(file)).id;
+                    Assert.IsTrue(ids.Add(id), $"{folder}에서 id가 겹침: {id}");
+                }
+            }
+        }
+
+        private static void CheckFolder(string folder)
+        {
+            var files = System.IO.Directory.GetFiles(folder, "*.json");
             System.Array.Sort(files, System.StringComparer.Ordinal);
             Assert.IsNotEmpty(files);
 
             for (var i = 0; i < files.Length; i++)
             {
                 var definition = LevelDefinition.FromData(JsonUtility.FromJson<LevelData>(System.IO.File.ReadAllText(files[i])));
-                var result = Solver.Solve(definition);
+                var result = Solver.Solve(definition, LevelTestNodeLimit);
                 var summary = Solver.Describe(definition, result, 3);
 
                 Assert.IsFalse(result.HitNodeLimit, summary);

@@ -1,0 +1,15 @@
+{
+  "id": "normal05",
+  "name": "벽 사이로 돌리기",
+  "sizeX": 5,
+  "sizeY": 1,
+  "sizeZ": 5,
+  "sources": [{ "x": 4, "y": 0, "z": 4, "dir": "South" }],
+  "crystals": [{ "x": 1, "y": 0, "z": 3 }],
+  "walls": [{ "x": 2, "y": 0, "z": 3 }, { "x": 3, "y": 0, "z": 2 }, { "x": 3, "y": 0, "z": 0 }, { "x": 1, "y": 0, "z": 2 }, { "x": 3, "y": 0, "z": 4 }],
+  "fixedPieces": [],
+  "pedestals": [{ "x": 0, "y": 0, "z": 2 }, { "x": 4, "y": 0, "z": 0 }, { "x": 4, "y": 0, "z": 2 }, { "x": 4, "y": 0, "z": 1 }, { "x": 2, "y": 0, "z": 1 }, { "x": 2, "y": 0, "z": 2 }, { "x": 0, "y": 0, "z": 1 }, { "x": 1, "y": 0, "z": 1 }, { "x": 0, "y": 0, "z": 4 }, { "x": 1, "y": 0, "z": 4 }, { "x": 4, "y": 0, "z": 3 }],
+  "inventory": { "plane": 4, "lift": 0, "splitter": 0 },
+  "solverMinPlacements": 4,
+  "solverMinPath": 12
+}

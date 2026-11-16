@@ -1,0 +1,15 @@
+{
+  "id": "normal13",
+  "name": "둘 다 꺾기",
+  "sizeX": 5,
+  "sizeY": 1,
+  "sizeZ": 5,
+  "sources": [{ "x": 0, "y": 0, "z": 0, "dir": "East" }],
+  "crystals": [{ "x": 0, "y": 0, "z": 4 }, { "x": 3, "y": 0, "z": 4 }],
+  "walls": [{ "x": 0, "y": 0, "z": 1 }, { "x": 4, "y": 0, "z": 1 }, { "x": 0, "y": 0, "z": 3 }],
+  "fixedPieces": [],
+  "pedestals": [{ "x": 3, "y": 0, "z": 0 }, { "x": 2, "y": 0, "z": 0 }, { "x": 4, "y": 0, "z": 0 }, { "x": 2, "y": 0, "z": 4 }, { "x": 2, "y": 0, "z": 3 }, { "x": 3, "y": 0, "z": 3 }],
+  "inventory": { "plane": 3, "lift": 0, "splitter": 2 },
+  "solverMinPlacements": 3,
+  "solverMinPath": 13
+}

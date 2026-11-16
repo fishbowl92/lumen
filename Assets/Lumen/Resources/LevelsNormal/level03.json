@@ -1,0 +1,15 @@
+{
+  "id": "normal03",
+  "name": "회전 연습",
+  "sizeX": 4,
+  "sizeY": 1,
+  "sizeZ": 4,
+  "sources": [{ "x": 3, "y": 0, "z": 3, "dir": "West" }],
+  "crystals": [{ "x": 3, "y": 0, "z": 0 }],
+  "walls": [{ "x": 3, "y": 0, "z": 2 }, { "x": 1, "y": 0, "z": 2 }, { "x": 1, "y": 0, "z": 1 }],
+  "fixedPieces": [],
+  "pedestals": [{ "x": 0, "y": 0, "z": 0 }, { "x": 0, "y": 0, "z": 3 }, { "x": 2, "y": 0, "z": 0 }, { "x": 1, "y": 0, "z": 3 }, { "x": 2, "y": 0, "z": 2 }],
+  "inventory": { "plane": 3, "lift": 0, "splitter": 0 },
+  "solverMinPlacements": 2,
+  "solverMinPath": 9
+}
