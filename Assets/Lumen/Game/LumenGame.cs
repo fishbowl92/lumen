@@ -126,9 +126,24 @@ namespace Lumen.Game
 
             _board.Tick(Time.deltaTime);
             _rig.Tick(Time.deltaTime);
+
+            // 클리어 순간부터 판·카메라 입력을 잠근다(기획: 클리어 순간 입력 잠금 → 연출 → 결과 창).
+            // 연출 도중 R·WASD·우클릭 드래그 등으로 판이나 카메라가 바뀌지 않게 하고,
+            // 다시 하기·다음 판은 결과 창 버튼으로만 한다.
+            if (_session.IsCleared)
+            {
+                _rightDragging = false;
+                return;
+            }
+
             HandleKeyboard(Keyboard.current);
             HandleMouse(Mouse.current);
         }
+
+        /// <summary>클리어 연출이 끝나 결과 창이 뜬 뒤인가.</summary>
+        private bool ClearPanelShown =>
+            _session != null && _session.IsCleared && _clearedAt >= 0f &&
+            Time.time - _clearedAt >= _board.ClearEffectLength + ClearPanelGap;
 
         private void HandleKeyboard(Keyboard keyboard)
         {
@@ -344,11 +359,16 @@ namespace Lumen.Game
             var definition = _session.Definition;
             var width = Screen.width;
 
+            // 클리어 연출 중에는 모든 버튼을 잠그고, 결과 창이 뜨면 상단 바만 다시 연다.
+            var cleared = _session.IsCleared;
+            var celebrating = cleared && !ClearPanelShown;
+
             // 상단 바: 레벨 번호, 배치 수, 레벨 목록
             GUI.Box(new Rect(0, 0, width, TopBarHeight), GUIContent.none, skin.Bar);
             GUI.Label(new Rect(16, 0, 300, TopBarHeight), $"{_mode.ToUpperInvariant()}  ·  LEVEL {_levelIndex + 1} / {_levels.Count}", skin.Label);
             GUI.Label(new Rect(width * 0.5f - 180, 0, 360, TopBarHeight),
                 $"Best: {definition.SolverMinPlacements} mirrors · path {definition.SolverMinPath}", skin.LabelCenter);
+            GUI.enabled = !celebrating;
             if (GUI.Button(new Rect(width - 112, 7, 100, 30), _showLevelList ? "Close" : "Levels",
                     _showLevelList ? skin.Selected : skin.Button))
             {
@@ -357,9 +377,12 @@ namespace Lumen.Game
 
             if (GUI.Button(new Rect(width - 220, 7, 100, 30), "Stages", skin.Button))
             {
+                GUI.enabled = true;
                 OpenSelect();
                 return;
             }
+
+            GUI.enabled = true;
 
             // 하단 바: 왼쪽은 거울 선택(선택한 것은 주황), 오른쪽은 되돌리기·리셋·층 보기
             var barY = Screen.height - BottomBarHeight;
@@ -385,7 +408,7 @@ namespace Lumen.Game
             var right = width - 12f;
             var floorText = _board.VisibleFloor < 0 ? "Floor: All" : $"Floor: {_board.VisibleFloor + 1}";
             right -= 156f;
-            GUI.enabled = true;
+            GUI.enabled = !cleared;
             if (GUI.Button(new Rect(right, buttonY, 156, ButtonHeight), floorText + "  [Tab]",
                     _board.VisibleFloor < 0 ? skin.Button : skin.Selected))
             {
@@ -399,7 +422,7 @@ namespace Lumen.Game
             }
 
             right -= 120f;
-            GUI.enabled = _session.CanUndo;
+            GUI.enabled = _session.CanUndo && !cleared;
             if (GUI.Button(new Rect(right, buttonY, 112, ButtonHeight), "Undo  [Z]", skin.Button) && _session.Undo())
             {
                 Changed();
